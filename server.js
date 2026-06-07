@@ -423,10 +423,11 @@ socket.on("gameResult", data => {
 
 });
 
-http.listen(3000, () => {
-  console.log("서버 실행 중: http://localhost:3000");
-});
+const PORT = process.env.PORT || 3000;
 
+http.listen(PORT, () => {
+  console.log("서버 실행 중:", PORT);
+});
 
 
 
