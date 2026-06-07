@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Game Title Layout</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #e8f5e9; /* 연한 연두 */
+      color: white;
+      font-family: sans-serif; 
+      
+    }
+    .stage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 100px); /* 4열 */
+  grid-template-rows: repeat(2, 100px);    /* 2행 */
+  gap: 15px;
+}
+
+    /* 확실하게 숨기기 */
+    .hidden {
+      display: none !important;
+    }
+
+    /* 메인 메뉴 */
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .block {
+      width: 120px;
+      height: 50px;
+      background: #4CAF50;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .block:hover {
+      background: #66bb6a;
+      transform: scale(1.05);
+    }
+
+    /* 스테이지 선택 화면 */
+    .stage-container {
+      display: grid;
+      grid-template-columns: repeat(4, 100px);
+      grid-template-rows: repeat(2, 100px);
+      gap: 15px;
+      
+    }
+
+    .stage {
+      background: #2196F3;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .stage:hover {
+      background: #42a5f5;
+      transform: scale(1.1);
+    }
+
+    .back-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 100px;
+  height: 40px;
+  background: #f44336;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.back-btn:hover {
+  background: #e57373;
+}
+
+
+.shop-container {
+  position: fixed;   /* ⭐ 핵심 */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  display: flex;              /* ⭐ 추가 */
+  justify-content: center;    /* ⭐ 가로 중앙 */
+  align-items: center; 
+}
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 120px);
+  grid-template-rows: repeat(4, 80px);
+  gap: 15px;
+  justify-content: center;
+  align-items: center;
+}
+
+.shop-item {
+  width: 120px;
+  height: 80px;
+  background: #a5d6a7;
+  color: #1b5e20;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.shop-item:hover {
+  transform: scale(1.05);
+}
+
+.coin-display {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  font-weight: bold;
+  color: #1b5e20;
+}
+
+
+
+.game-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #e8f5e9;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(2, 100px);
+  grid-template-rows: repeat(2, 100px);
+  gap: 10px;
+}
+
+.board-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 80px);
+  grid-template-rows: repeat(4, 80px);
+  gap: 20px; /* ⭐ 핵심 */
+}
+
+.cell {
+  width: 100px;
+  height: 100px;
+  background: #a5d6a7;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  font-weight: bold;
+  border-radius: 10px;
+}
+
+.score {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  
+  font-size: 24px;
+  font-weight: bold;
+  color: #1b5e20;
+  z-index: 999;
+}
+
+.multi-back-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+
+  width: 100px;
+  height: 40px;
+
+  background: #f44336;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.multi-back-btn:hover {
+  background: #e57373;
+}
+
+#multiContainer {
+  grid-template-columns: repeat(2, 120px);
+  grid-template-rows: repeat(2, 100px);
+}
+
+.player-id {
+  position: fixed;
+
+  right: 30px;
+  top: 30px;
+
+  font-size: 22px;
+  font-weight: bold;
+
+  color: #1b5e20;
+
+  background: white;
+  padding: 10px 20px;
+
+  border-radius: 10px;
+
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.room-list {
+  position: fixed;
+
+  right: 30px;
+  top: 100px;
+
+  width: 250px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.room {
+  background: white;
+  color: black;
+
+  padding: 10px;
+
+  border-radius: 10px;
+
+  cursor: pointer;
+
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.room:hover {
+  transform: scale(1.03);
+}
+
+  </style>
+</head>
+<body>
+
+  <!-- 메뉴 -->
+  <div class="container" id="menu"></div>
+
+  <div class="stage-container hidden" id="multiContainer">
+
+  <div class="stage" id="matchingBtn">매칭하기</div>
+  <div class="stage" id="createRoomBtn">방 만들기</div>
+  <div class="stage" id="friendBtn">친구 초대</div>
+  <div class="stage" id="idBtn">ID 입력</div>
+
+  <div id="playerIdText" class="player-id"></div>
+  <div id="roomList" class="room-list"></div>
+
+  <div class="multi-back-btn" id="multiBackBtn">뒤로가기</div>
+</div>
+
+  <!-- 스테이지 -->
+  <div class="stage-container hidden" id="stageContainer"></div>
+
+  <!-- 상점 (독립!) -->
+  <div class="shop-container hidden" id="shopContainer"></div>
+
+  <div class="game-container hidden" id="gameContainer"></div>
+
+  <!-- 옵션 -->
+  <div class="container hidden" id="optionContainer"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- JS는 무조건 마지막 -->
+  <script src="script.js"></script>
+  
+
+</body>
+</html>
