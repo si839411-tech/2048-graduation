@@ -22,6 +22,38 @@
   gap: 15px;
 }
 
+
+    /* 메인 8개 스테이지의 오른쪽에 9-1 특별 버튼 배치 */
+    .stage-main-layout {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      width: max-content;
+      max-width: calc(100vw - 32px);
+    }
+    .stage-main-layout .stage-grid { flex: 0 0 auto; }
+    .stage-nine-special {
+      width: 120px;
+      height: 100px;
+      min-height: 100px;
+      box-sizing: border-box;
+      flex: 0 0 120px;
+      align-self: center;
+      background: #e53935;
+      white-space: pre-line;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .stage-nine-special:hover { background: #c62828; }
+    .stage-nine-locked, .stage-nine-locked:hover {
+      background: #b0bec5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    @media (max-width: 650px) {
+      .stage-main-layout { gap: 10px; transform: scale(.75); transform-origin: center; }
+    }
+
     /* 확실하게 숨기기 */
     .hidden {
       display: none !important;
