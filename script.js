@@ -13759,6 +13759,16 @@ function createAI7Layout() {
 
   wrapper.appendChild(left.panel);
   wrapper.appendChild(right.panel);
+  wrapper.classList.add("ai-competition-layout");
+  left.panel.classList.add("ai-my-side");
+  right.panel.classList.add("ai-enemy-side");
+  const mobileAIScore = document.createElement("div");
+  mobileAIScore.className = "mobile-opponent-score";
+  mobileAIScore.textContent = right.scoreText.textContent;
+  left.panel.insertBefore(mobileAIScore, left.boardDiv);
+  new MutationObserver(() => { mobileAIScore.textContent = right.scoreText.textContent; })
+    .observe(right.scoreText, { childList: true, characterData: true, subtree: true });
+
   gameContainer.appendChild(wrapper);
 
   AI7.resultText = document.createElement("div");
@@ -15436,6 +15446,14 @@ mySide.appendChild(myArea);
 
 enemySide.appendChild(enemyTitle);
 enemySide.appendChild(enemyScoreText);
+// Mobile-only opponent score mirror, synchronized with the existing live score.
+const mobileEnemyScore = document.createElement("div");
+mobileEnemyScore.className = "mobile-opponent-score";
+mobileEnemyScore.textContent = enemyScoreText.textContent;
+mySide.insertBefore(mobileEnemyScore, myArea);
+new MutationObserver(() => { mobileEnemyScore.textContent = enemyScoreText.textContent; })
+  .observe(enemyScoreText, { childList: true, characterData: true, subtree: true });
+
 enemySide.appendChild(enemyPreviewText);
 enemySide.appendChild(enemyTargetText);
 enemySide.appendChild(enemyTurnText);
