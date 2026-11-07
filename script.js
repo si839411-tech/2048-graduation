@@ -15091,6 +15091,8 @@ boardWrapper.appendChild(itemPanel);
 
 
   const myInfoBox = document.createElement("div");
+  myInfoBox.classList.add("mobile-multi-info");
+  nextPreview.classList.add("mobile-multi-preview");
   myInfoBox.style.display = "flex";
   myInfoBox.style.flexDirection = "column";
   myInfoBox.style.alignItems = "center";

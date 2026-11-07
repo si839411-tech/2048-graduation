@@ -23,6 +23,15 @@
     pad.appendChild(button);
   }
   document.body.appendChild(pad);
+  const toolbar = document.createElement('div');
+  toolbar.className = 'mobile-game-toolbar';
+  function organizeControls() {
+    if (!mobile.matches || game.classList.contains('hidden')) return;
+    if (toolbar.parentElement !== game) game.appendChild(toolbar);
+    const backs = [...game.querySelectorAll('.back-btn, .multi-back-btn')];
+    backs.forEach(btn => { if (btn.parentElement !== toolbar) toolbar.appendChild(btn); });
+    if (pad.parentElement !== toolbar) toolbar.appendChild(pad);
+  }
   let start = null;
   game.addEventListener('touchstart', (e) => {
     if (!mobile.matches || game.classList.contains('hidden') || e.touches.length !== 1) { start = null; return; }
@@ -74,6 +83,7 @@
     pad.style.display = mobile.matches && !game.classList.contains('hidden') ? 'grid' : 'none';
     if (!mobile.matches) return;
     normalizeStagePanels();
+    organizeControls();
     game.querySelectorAll('.board').forEach(board => {
       const raw = board.style.gridTemplateColumns || '';
       const match = raw.match(/repeat\(\s*(\d+)\s*,/);
@@ -81,7 +91,9 @@
       const rowRaw = board.style.gridTemplateRows || '';
       const rowMatch = rowRaw.match(/repeat\(\s*(\d+)\s*,/);
       const rows = rowMatch ? Number(rowMatch[1]) : cols;
-      const width = Math.min(window.innerWidth - 32, 360);
+      // Fit BOTH axes. 7x11 and other tall boards must not exceed mobile viewport.
+      const availableHeight = Math.max(190, window.innerHeight * (rows > 7 ? .48 : rows > 5 ? .52 : .55));
+      const width = Math.max(130, Math.min(window.innerWidth - 28, 360, availableHeight * cols / rows));
       const gap = Math.max(3, Math.min(7, Math.floor(width / (cols * 12))));
       const side = Math.floor((width - gap * (cols - 1)) / cols);
       board.style.setProperty('grid-template-columns', `repeat(${cols}, minmax(0, 1fr))`, 'important');
@@ -92,6 +104,7 @@
       board.style.setProperty('transform', 'none', 'important');
       board.style.setProperty('margin-left', 'auto', 'important');
       board.style.setProperty('margin-right', 'auto', 'important');
+      board.style.setProperty('max-width', '100%', 'important');
     });
   }
   let queued = false;
