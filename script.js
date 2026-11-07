@@ -13538,10 +13538,12 @@ function initGame_9_1() {
 }
 
 function startChallengeRound_AI7() {
-  // 기존 AI7 엔진을 그대로 사용하고, 난이도에 따라 봇 선택 확률과 속도만 변경한다.
+  // 1~30 기존, 31~60 가중치, 61~100 제한시간 Expectimax.
+  // 판단 작업은 Worker에서 처리하여 모바일 메인 스레드를 막지 않는다.
   document.onkeydown = null;
   clearInterval(AI7.timerInterval);
   clearInterval(AI7.aiInterval);
+  stopAIThinking_AI7();
   gameContainer.innerHTML = "";
   AI7.ended = false;
   AI7.player = createAI7Side("플레이어");
@@ -13570,9 +13572,7 @@ function startChallengeRound_AI7() {
     if (AI7.player.timer <= 0) finishAI7("LOSE!", "TIME OUT!");
     else if (AI7.ai.timer <= 0) finishAI7("WIN!", "AI TIME OUT!");
   }, 1000);
-  AI7.aiInterval = setInterval(() => {
-    if (!AI7.ended) aiMove_AI7();
-  }, Math.max(140, 1250 - AI7.difficulty * 11));
+  startAITimer_AI7();
 }
 
 // ===============================
@@ -13603,6 +13603,10 @@ const AI7 = {
   difficulty: 1,
   streak: 0,
   nextRoundTimeout: null,
+  aiWorker: null,
+  aiThinking: false,
+  aiRequestId: 0,
+  aiTimeout: null,
   challengeStatus: null
 };
 
@@ -13623,6 +13627,7 @@ function initGame_7_1() {
   document.onkeydown = null;
   clearInterval(AI7.timerInterval);
   clearInterval(AI7.aiInterval);
+  stopAIThinking_AI7();
 
   gameContainer.innerHTML = "";
   AI7.ended = false;
@@ -13665,10 +13670,7 @@ applyStartItems_AI7(AI7.ai);
     if (AI7.ai.timer <= 0) finishAI7("WIN!", "AI TIME OUT!");
   }, 1000);
 
-  AI7.aiInterval = setInterval(() => {
-    if (AI7.ended) return;
-    aiMove_AI7();
-  }, AI7.challengeMode ? Math.max(140, 1250 - AI7.difficulty * 11) : 700);
+  startAITimer_AI7();
 }
 
 function getScoreBonus_AI7() {
@@ -13789,6 +13791,7 @@ function createAI7Layout() {
   createBackButton(() => {
     clearInterval(AI7.timerInterval);
     clearInterval(AI7.aiInterval);
+    stopAIThinking_AI7();
     clearTimeout(AI7.nextRoundTimeout);
     AI7.challengeMode = null;
     document.onkeydown = null;
@@ -13952,54 +13955,199 @@ function updateSlotUI_AI7() {
   }
 }
 
-function aiMove_AI7() {
-  const dirs = [
-    [0, -1],
-    [0, 1],
-    [-1, 0],
-    [1, 0]
-  ];
+// AI 난이도별 속도: 레벨 1=2000ms, 레벨 100=800ms (선형 변화).
+function getAIDelay_AI7(level) {
+  const n = Math.max(1, Math.min(100, Number(level) || 1));
+  return Math.round(2000 - (n - 1) * 1200 / 99);
+}
 
-  let bestDir = null;
-  let bestScore = -Infinity;
-  const validDirs = [];
+function startAITimer_AI7() {
+  clearInterval(AI7.aiInterval);
+  const delay = AI7.challengeMode ? getAIDelay_AI7(AI7.difficulty) : 2000;
+  AI7.aiInterval = setInterval(() => {
+    if (AI7.ended || AI7.aiThinking) return;
+    if (AI7.challengeMode && AI7.difficulty >= 61) {
+      requestExpectimax_AI7();
+    } else {
+      aiMove_AI7();
+    }
+  }, delay);
+}
 
-  for (const dir of dirs) {
-    const test = cloneSide_AI7(AI7.ai);
-    const moved = moveSide_AI7(test, dir);
+function stopAIThinking_AI7() {
+  AI7.aiRequestId++;
+  AI7.aiThinking = false;
+  clearTimeout(AI7.aiTimeout);
+  AI7.aiTimeout = null;
+  if (AI7.aiWorker) {
+    AI7.aiWorker.terminate();
+    AI7.aiWorker = null;
+  }
+}
 
-    if (!moved) continue;
-    validDirs.push(dir);
+const AI7_DIRECTIONS = [[0,-1], [0,1], [-1,0], [1,0]];
 
-    const emptyCount = countEmpty_AI7(test.board);
-    const maxTile = Math.max(...test.board.flat());
-    const value = emptyCount * 100 + maxTile + test.score;
+// 루트 후보는 반드시 실제 게임의 이동/장애물 규칙을 사용해 생성한다.
+function getMoveCandidates_AI7() {
+  if (!AI7.ai) return [];
+  const result = [];
+  for (let i = 0; i < AI7_DIRECTIONS.length; i++) {
+    const copy = cloneSide_AI7(AI7.ai);
+    if (!moveSide_AI7(copy, AI7_DIRECTIONS[i])) continue;
+    result.push({ index:i, dir:AI7_DIRECTIONS[i], side:copy });
+  }
+  return result;
+}
 
-    if (value > bestScore) {
-      bestScore = value;
-      bestDir = dir;
+// 빈 칸, 합칠 수 있는 타일, 매끄러운 배열, 큰 타일 구석 배치, 즉시 점수.
+function rateSide_AI7(side) {
+  const b = side.board, n = b.length;
+  let empty = 0, pairs = 0, rough = 0, maxTile = 0;
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < b[r].length; c++) {
+      const v = b[r][c];
+      if (!v) { empty++; continue; }
+      if (v > maxTile) maxTile = v;
+      if (c + 1 < b[r].length && b[r][c+1]) {
+        if (b[r][c+1] === v) pairs++;
+        rough += Math.abs(Math.log2(v) - Math.log2(b[r][c+1]));
+      }
+      if (r + 1 < n && b[r+1][c]) {
+        if (b[r+1][c] === v) pairs++;
+        rough += Math.abs(Math.log2(v) - Math.log2(b[r+1][c]));
+      }
     }
   }
+  const corner = maxTile > 0 && (b[0][0] === maxTile || b[0][n-1] === maxTile || b[n-1][0] === maxTile || b[n-1][n-1] === maxTile);
+  return empty * 65 + pairs * 28 + (corner ? 75 : 0) + Math.log2(Math.max(2,maxTile)) * 16
+    - rough * 7 + side.score * 0.35
+    - (side.locks ? side.locks.length : 0) * 10
+    - (side.curseBombs ? side.curseBombs.length : 0) * 8;
+}
 
-  // 낮은 난이도일수록 무작위 수를 자주 선택하고, 높은 난이도는 평가 점수를 우선한다.
-  if (AI7.challengeMode && validDirs.length && Math.random() > AI7.difficulty / 100) {
-    bestDir = validDirs[Math.floor(Math.random() * validDirs.length)];
+function selectFallback_AI7(candidates, level) {
+  if (!candidates.length) return null;
+  if (level <= 30) {
+    // 저난이도: 이전 버전의 평가식과 실수(무작위 선택) 확률 그대로 유지.
+    let best = candidates[0], bestValue = -Infinity;
+    for (const c of candidates) {
+      const flat = c.side.board.flat();
+      const v = countEmpty_AI7(c.side.board)*100 + Math.max(...flat) + c.side.score;
+      if (v > bestValue) { bestValue = v; best = c; }
+    }
+    if (AI7.challengeMode && Math.random() > level / 100) {
+      return candidates[Math.floor(Math.random()*candidates.length)];
+    }
+    return best;
   }
-
-  if (!bestDir) {
-    finishAI7("WIN!", " 상대 이동 불가!");
-    return;
+  let best = candidates[0], bestValue = -Infinity;
+  for (const c of candidates) {
+    const v = rateSide_AI7(c.side);
+    if (v > bestValue) { bestValue = v; best = c; }
   }
+  // 중간 난이도에서는 가중치 판단을 위주로 하되 적은 확률로 실수한다.
+  if (level <= 60 && Math.random() > (0.78 + (level-31)*0.22/29)) {
+    return candidates[Math.floor(Math.random()*candidates.length)];
+  }
+  return best;
+}
 
-  const moved = moveSide_AI7(AI7.ai, bestDir);
-
-  if (moved) {
+function makeMove_AI7(dir) {
+  if (AI7.ended || !AI7.ai || !dir) return;
+  if (moveSide_AI7(AI7.ai, dir)) {
     afterMove_AI7(AI7.ai);
     resetTimer_AI7(AI7.ai);
     drawAI7();
     checkResult_AI7();
   }
 }
+
+function aiMove_AI7() {
+  const candidates = getMoveCandidates_AI7();
+  if (!candidates.length) {
+    finishAI7("WIN!", "상대 이동 불가!");
+    return;
+  }
+  const selected = selectFallback_AI7(candidates, AI7.challengeMode ? AI7.difficulty : 30);
+  makeMove_AI7(selected.dir);
+}
+
+function getSpawnDistribution_AI7() {
+  if (localStorage.getItem('item8')) return [[32,0.5],[64,0.3],[128,0.2]];
+  if (localStorage.getItem('item7')) return [[16,0.5],[32,0.3],[64,0.2]];
+  if (localStorage.getItem('item4')) return [[8,0.5],[16,0.3],[32,0.2]];
+  if (localStorage.getItem('item3')) return [[4,0.5],[8,0.3],[16,0.2]];
+  return [[2,0.9],[4,0.1]];
+}
+
+function requestExpectimax_AI7() {
+  const candidates = getMoveCandidates_AI7();
+  if (!candidates.length) { finishAI7('WIN!', '상대 이동 불가!'); return; }
+  const fallback = selectFallback_AI7(candidates, AI7.difficulty);
+  // Web Worker가 막혔거나 생성 실패 시 가중치 AI로 즉시 대체한다.
+  if (typeof Worker === 'undefined') { makeMove_AI7(fallback.dir); return; }
+  if (!AI7.aiWorker) {
+    try { AI7.aiWorker = new Worker('ai-worker.js'); }
+    catch (_) { makeMove_AI7(fallback.dir); return; }
+  }
+  const worker = AI7.aiWorker;
+  const requestId = ++AI7.aiRequestId;
+  const snapshot = JSON.stringify({
+    board:AI7.ai.board, score:AI7.ai.score,
+    locks:AI7.ai.locks, shields:AI7.ai.shields,
+    bombs:AI7.ai.bombs, lasers:AI7.ai.lasers, curse:AI7.ai.curseBombs
+  });
+  AI7.aiThinking = true;
+  const mobile = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
+  const budgetMs = Math.round((mobile ? 20 : 35) + (AI7.difficulty-61)*(mobile ? 20 : 35)/39);
+  let completed = false;
+  function complete(index) {
+    if (completed) return;
+    completed = true;
+    clearTimeout(AI7.aiTimeout);
+    AI7.aiTimeout = null;
+    AI7.aiThinking = false;
+    if (AI7.ended || requestId !== AI7.aiRequestId || !AI7.ai) return;
+    const now = JSON.stringify({
+      board:AI7.ai.board, score:AI7.ai.score,
+      locks:AI7.ai.locks, shields:AI7.ai.shields,
+      bombs:AI7.ai.bombs, lasers:AI7.ai.lasers, curse:AI7.ai.curseBombs
+    });
+    // 그 사이 상대방의 아이템/방해물로 보드가 바뀌었다면 재검증한다.
+    const latestCandidates = now === snapshot ? candidates : getMoveCandidates_AI7();
+    if (!latestCandidates.length) { finishAI7('WIN!', '상대 이동 불가!'); return; }
+    const chosen = latestCandidates.find(c => c.index === index) || selectFallback_AI7(latestCandidates, AI7.difficulty);
+    makeMove_AI7(chosen.dir);
+  }
+  worker.onmessage = e => {
+    if (!e.data || e.data.id !== requestId) return;
+    complete(e.data.index);
+  };
+  worker.onerror = () => {
+    if (AI7.aiWorker === worker) { worker.terminate(); AI7.aiWorker = null; }
+    complete(fallback.index);
+  };
+  AI7.aiTimeout = setTimeout(() => {
+    if (AI7.aiWorker === worker) { worker.terminate(); AI7.aiWorker = null; }
+    complete(fallback.index);
+  }, budgetMs + 100);
+  try {
+    // 현재 이동은 실제 게임 시뮬레이션 결과를 사용하며,
+    // 이후 확률 노드에서 실제 규칙대로 타일을 두 개 생성한다.
+    worker.postMessage({
+      id:requestId, level:AI7.difficulty, budgetMs, spawn:getSpawnDistribution_AI7(),
+      mergeBonus:getScoreBonus_AI7(),
+      // 특수 장애물이 있으면 다음 턴의 단순 격자 추론을 제한한다.
+      special: !!(AI7.ai.locks.length || AI7.ai.shields.length || AI7.ai.bombs.length ||
+        AI7.ai.lasers.length || AI7.ai.curseBombs.length || AI7.ai.turnCount <= 1),
+      candidates:candidates.map(c => ({index:c.index, board:c.side.board, score:c.side.score}))
+    });
+  } catch (_) {
+    if (AI7.aiWorker === worker) { worker.terminate(); AI7.aiWorker = null; }
+    complete(fallback.index);
+  }
+}
+
 function cloneSide_AI7(side) {
   return {
     name: side.name,
@@ -14811,6 +14959,7 @@ function finishAI7(result, reason) {
 
   clearInterval(AI7.timerInterval);
   clearInterval(AI7.aiInterval);
+  stopAIThinking_AI7();
   document.onkeydown = null;
 
   AI7.resultText.textContent = `${result} ${reason}`;
