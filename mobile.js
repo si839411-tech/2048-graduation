@@ -109,7 +109,7 @@
       const rect = board.getBoundingClientRect();
       if (!rect.width || !rect.height) continue;
       const panelWidth = panel.getBoundingClientRect().width || 70;
-      const gap = 14;
+      const gap = 30; // Desktop: leave a comfortable 30px gap between board and item slots.
       // Prefer the board's right side, with a left-side fallback on narrow desktop windows.
       const rightSpace = window.innerWidth - rect.right;
       const left = rightSpace >= panelWidth + gap + 8
