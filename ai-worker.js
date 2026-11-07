@@ -40,8 +40,13 @@ function evaluate(board, score) {
   const corner=maximum>0 &&
     (board[0][0]===maximum || board[0][n-1]===maximum ||
      board[n-1][0]===maximum || board[n-1][n-1]===maximum);
-  return empty*65 + adjacent*28 + (corner ? 75 : 0) +
-    Math.log2(Math.max(2,maximum))*16 - rough*7 + score*0.35;
+  // On the 4×4 challenge board two tiles appear after each move.
+  // Reserve empty cells and discourage terminal boards; this applies only to 4×4.
+  const emptyWeight = n === 4 ? 90 : 65;
+  const crowdPenalty = n === 4 ? Math.max(0, 3 - empty) * 90 : 0;
+  if(n === 4 && empty === 0 && adjacent === 0) return -10000 + score*0.05;
+  return empty*emptyWeight + adjacent*28 + (corner ? 75 : 0) +
+    Math.log2(Math.max(2,maximum))*16 - rough*7 - crowdPenalty + score*0.35;
 }
 
 // Ordinary board movement is used ONLY for future hypothetical states; the

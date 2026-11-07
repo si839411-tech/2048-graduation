@@ -274,7 +274,7 @@ socket.on("roomError", message => {
     "4-1": 900, "4-2": 1200, "4-3": 1500, "4-4": 1900,
     "5-1": 2000, "5-2": 2800,
     "6-1": 3000, "6-2": 4000,
-    "7-1": 2400, "8-1": 5000, "9-1": 5500,
+    "7-1": 2400, "8-1": 2200, "9-1": 2400,
     "multi": 3000
   });
   const STAGE_REWARDS = Object.freeze({
@@ -13518,6 +13518,7 @@ function changedLine(a, b) {
 // 9-1: 난이도 1에서 시작, 승리 +5, 3초 후 다음 대전
 // ===============================
 function initGame_8_1() {
+  AI7.SIZE = 4; // 8-1은 4×4 대전 보드
   AI7.TARGET = getStageGoal(8, 1);
   clearTimeout(AI7.nextRoundTimeout);
   AI7.challengeMode = 8;
@@ -13527,6 +13528,7 @@ function initGame_8_1() {
 }
 
 function initGame_9_1() {
+  AI7.SIZE = 4; // 9-1은 4×4 대전 보드
   AI7.TARGET = getStageGoal(9, 1);
   clearTimeout(AI7.nextRoundTimeout);
   AI7.challengeMode = 9;
@@ -13612,6 +13614,7 @@ const AI7 = {
 };
 
 function initGame_7_1() {
+  AI7.SIZE = 5; // 기존 7-1의 5×5 보드 원상 복구
   AI7.TARGET = getStageGoal(7, 1);
   AI7.challengeMode = null;
   clearTimeout(AI7.nextRoundTimeout);
@@ -13688,7 +13691,7 @@ function getScoreBonus_AI7() {
 function getSpawnValue_AI7() {
   if (AI7.challengeMode) {
     // 8/9: 상점 강화와 무관한 동일한 타일 확률(플레이어·AI 공통).
-    // 합치기 쉬운 4를 자주 생성하여 5x5/턴당 2개 생성 규칙에서 급격한 포화 완화.
+    // 4×4/이동당 타일 2개 규칙에서 플레이어·AI에 동일하게 적용.
     const r = Math.random();
     return r < 0.70 ? 4 : r < 0.95 ? 8 : 16;
   }
@@ -13964,10 +13967,10 @@ function updateSlotUI_AI7() {
   }
 }
 
-// AI 난이도별 속도: 레벨 1=2000ms, 레벨 100=800ms (선형 변화).
+// 8·9 챌린지 AI 속도: 레벨 1=1300ms, 레벨 100=600ms (선형 변화).
 function getAIDelay_AI7(level) {
   const n = Math.max(1, Math.min(100, Number(level) || 1));
-  return Math.round(2000 - (n - 1) * 1200 / 99);
+  return Math.round(1300 - (n - 1) * 700 / 99);
 }
 
 function startAITimer_AI7() {
@@ -14028,8 +14031,12 @@ function rateSide_AI7(side) {
     }
   }
   const corner = maxTile > 0 && (b[0][0] === maxTile || b[0][n-1] === maxTile || b[n-1][0] === maxTile || b[n-1][n-1] === maxTile);
-  return empty * 65 + pairs * 28 + (corner ? 75 : 0) + Math.log2(Math.max(2,maxTile)) * 16
-    - rough * 7 + side.score * 0.35
+  // 4×4 대전은 매 이동마다 새 타일 2개를 생성하므로 빈칸 확보를 더 중시한다.
+  // 7-1(5×5)은 이전 평가식을 유지한다.
+  const emptyWeight = AI7.challengeMode && n === 4 ? 90 : 65;
+  const crowdPenalty = AI7.challengeMode && n === 4 ? Math.max(0, 3 - empty) * 90 : 0;
+  return empty * emptyWeight + pairs * 28 + (corner ? 75 : 0) + Math.log2(Math.max(2,maxTile)) * 16
+    - rough * 7 - crowdPenalty + side.score * 0.35
     - (side.locks ? side.locks.length : 0) * 10
     - (side.curseBombs ? side.curseBombs.length : 0) * 8;
 }
