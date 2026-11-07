@@ -35,7 +35,7 @@
   let start = null;
   game.addEventListener('touchstart', (e) => {
     if (!mobile.matches || game.classList.contains('hidden') || e.touches.length !== 1) { start = null; return; }
-    if (e.target.closest('button, input, select, textarea, .mobile-direction-pad, .back-btn, .shop-item')) { start = null; return; }
+    if (!e.target.closest('.board, .cell') || e.target.closest('button, input, select, textarea, .mobile-direction-pad, .back-btn, .shop-item')) { start = null; return; }
     const t = e.touches[0];
     start = { x: t.clientX, y: t.clientY };
   }, { passive: true });
@@ -92,8 +92,8 @@
       const rowMatch = rowRaw.match(/repeat\(\s*(\d+)\s*,/);
       const rows = rowMatch ? Number(rowMatch[1]) : cols;
       // Fit BOTH axes. 7x11 and other tall boards must not exceed mobile viewport.
-      const availableHeight = Math.max(190, window.innerHeight * (rows > 7 ? .48 : rows > 5 ? .52 : .55));
-      const width = Math.max(130, Math.min(window.innerWidth - 28, 360, availableHeight * cols / rows));
+      const availableHeight = Math.max(170, window.innerHeight * (rows > 7 ? .39 : rows > 5 ? .40 : .43));
+      const width = Math.max(125, Math.min(window.innerWidth - 28, 350, availableHeight * cols / rows));
       const gap = Math.max(3, Math.min(7, Math.floor(width / (cols * 12))));
       const side = Math.floor((width - gap * (cols - 1)) / cols);
       board.style.setProperty('grid-template-columns', `repeat(${cols}, minmax(0, 1fr))`, 'important');

@@ -729,6 +729,35 @@
  #gameContainer .ai-challenge-difficulty { position:absolute !important; top:10px !important; left:12px !important; }
 }
 
+
+/* V8: accessible mobile page flow; avoid cropped controls and excessive whitespace. */
+@media (max-width:700px) {
+ html,body { height:100% !important; overflow:hidden !important; }
+ #gameContainer:not(.hidden) {
+   padding: max(10px, env(safe-area-inset-top)) 10px 20px !important;
+   height:100dvh !important; overflow-y:auto !important;
+   justify-content:flex-start !important; align-items:center !important;
+   overscroll-behavior:contain; touch-action:pan-y !important;
+   scroll-padding-bottom:18px;
+ }
+ #gameContainer > * { max-width:100% !important; }
+ #gameContainer .board { margin:4px auto !important; }
+ #gameContainer .mobile-game-toolbar {
+   position:relative !important; bottom:auto !important;
+   margin:10px auto 12px !important; padding:4px 0 16px !important;
+   min-height:100px !important; flex-shrink:0 !important;
+ }
+ #gameContainer .mobile-game-toolbar .mobile-direction-pad { display:grid !important; }
+ #gameContainer .mobile-game-toolbar .back-btn,
+ #gameContainer .mobile-game-toolbar .multi-back-btn { display:flex !important; align-items:center !important; justify-content:center !important; }
+ #gameContainer .game-item-panel, #gameContainer .game-item-panel-inline,
+ #gameContainer .mobile-item-row { margin:4px auto !important; flex-shrink:0 !important; }
+ #gameContainer .score { margin:0 auto 2px !important; }
+ #gameContainer .multi-my-side, #gameContainer .ai-my-side,
+ #gameContainer .multi-battle-layout, #gameContainer .ai-competition-layout { gap:4px !important; }
+ #gameContainer .mobile-multi-info { gap:2px 8px !important; }
+}
+
 </style>
 </head>
 <body>
