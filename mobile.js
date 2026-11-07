@@ -43,30 +43,29 @@
   }, { passive: true });
   game.addEventListener('touchcancel', () => { start = null; }, { passive: true });
 
-  /* Scale PC-sized game content for narrow screens without modifying gameplay rules. */
+  /* Fit the actual grid tracks, not a transformed board with oversized cells. */
   function fitGame() {
     pad.style.display = mobile.matches && !game.classList.contains('hidden') ? 'grid' : 'none';
     if (!mobile.matches) return;
-    // The widest boards are ~880px, while 4x4 / 5x5 boards need less room.
-    const boards = [...game.querySelectorAll('.board, .board-4, [style*="grid-template-columns"]')]
-      .filter(el => !el.closest('.mobile-direction-pad'));
-    let maxBoard = 0;
-    for (const board of boards) {
-      const css = getComputedStyle(board);
-      if (css.display === 'none') continue;
-      maxBoard = Math.max(maxBoard, board.scrollWidth || board.offsetWidth);
-    }
-    const available = window.innerWidth - 20;
-    let scale = maxBoard ? Math.min(1, available / (maxBoard + 30)) : 1;
-    // Scale only the gameplay boards; keep overlay controls readable.
-    for (const board of boards) {
-      if (!board.dataset.mobileOriginalTransform) board.dataset.mobileOriginalTransform = board.style.transform || 'none';
-      if (!board.dataset.mobileOriginalOrigin) board.dataset.mobileOriginalOrigin = board.style.transformOrigin || '';
-      board.style.transform = scale < 1 ? `scale(${scale})` : board.dataset.mobileOriginalTransform;
-      board.style.transformOrigin = scale < 1 ? 'center center' : board.dataset.mobileOriginalOrigin;
-      board.style.marginLeft = scale < 1 ? `${-(1-scale)*board.offsetWidth/2}px` : '';
-      board.style.marginRight = scale < 1 ? `${-(1-scale)*board.offsetWidth/2}px` : '';
-    }
+    game.querySelectorAll('.board').forEach(board => {
+      const raw = board.style.gridTemplateColumns || '';
+      const match = raw.match(/repeat\(\s*(\d+)\s*,/);
+      const cols = match ? Number(match[1]) : (board.classList.contains('board-4') ? 4 : 2);
+      const rowRaw = board.style.gridTemplateRows || '';
+      const rowMatch = rowRaw.match(/repeat\(\s*(\d+)\s*,/);
+      const rows = rowMatch ? Number(rowMatch[1]) : cols;
+      const width = Math.min(window.innerWidth - 32, 360);
+      const gap = Math.max(3, Math.min(7, Math.floor(width / (cols * 12))));
+      const side = Math.floor((width - gap * (cols - 1)) / cols);
+      board.style.setProperty('grid-template-columns', `repeat(${cols}, minmax(0, 1fr))`, 'important');
+      board.style.setProperty('grid-template-rows', `repeat(${rows}, ${side}px)`, 'important');
+      board.style.setProperty('width', `${width}px`, 'important');
+      board.style.setProperty('height', `${rows * side + (rows - 1) * gap}px`, 'important');
+      board.style.setProperty('gap', `${gap}px`, 'important');
+      board.style.setProperty('transform', 'none', 'important');
+      board.style.setProperty('margin-left', 'auto', 'important');
+      board.style.setProperty('margin-right', 'auto', 'important');
+    });
   }
   let queued = false;
   function scheduleFit() {

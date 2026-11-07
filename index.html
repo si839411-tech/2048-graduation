@@ -611,6 +611,20 @@
       }
       #gameContainer .mobile-opponent-score { display: block !important; position: static !important; }
     }
+
+/* Mobile repair V4: grid sizing and battle layout; desktop unaffected. */
+@media (max-width: 700px) {
+ #gameContainer:not(.hidden) { padding: 72px 10px 160px !important; box-sizing: border-box; overflow-y: auto !important; }
+ #gameContainer .board { display: grid !important; transform: none !important; transform-origin: center !important; margin: 8px auto !important; flex: none !important; max-height: none !important; }
+ #gameContainer .board .cell { width: 100% !important; height: 100% !important; min-width: 0 !important; min-height: 0 !important; aspect-ratio: auto !important; box-sizing: border-box !important; font-size: clamp(13px, 5vw, 23px) !important; }
+ #gameContainer .multi-battle-layout, #gameContainer .ai-competition-layout { display: flex !important; flex-direction: column !important; align-items: center !important; height: auto !important; min-height: 0 !important; width: 100% !important; }
+ #gameContainer .multi-my-side, #gameContainer .ai-my-side { display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: flex-start !important; width: 100% !important; height: auto !important; border: none !important; }
+ #gameContainer .multi-enemy-side, #gameContainer .ai-enemy-side { display: none !important; }
+ #gameContainer .multi-my-side .multi-enemy-score { display: none !important; }
+ #gameContainer .mobile-opponent-score { display: block !important; order: 0; margin: 0 auto 6px !important; }
+ #gameContainer .game-item-panel, #gameContainer .game-item-panel-inline { position: static !important; display: flex !important; flex-flow: row nowrap !important; width: min(100%, 340px) !important; overflow-x: auto !important; margin: 12px auto !important; }
+ .mobile-direction-pad { right: 8px !important; bottom: max(12px, env(safe-area-inset-bottom)) !important; }
+}
 </style>
 </head>
 <body>
