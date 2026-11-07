@@ -309,6 +309,76 @@
 }
 
 
+    /* Responsive shop and options: preserve desktop layout. */
+    @media (max-width: 700px) {
+      #shopContainer.shop-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 10px;
+        padding: max(62px, env(safe-area-inset-top)) 12px calc(90px + env(safe-area-inset-bottom));
+        width: 100%;
+        height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      #shopContainer > .shop-item {
+        flex: 0 0 auto;
+        width: min(100%, 420px);
+        min-height: 48px;
+        height: auto;
+        box-sizing: border-box;
+        padding: 10px;
+        text-align: center;
+      }
+      #shopContainer > .shop-items-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-template-rows: none !important;
+        width: min(100%, 420px);
+        gap: 10px !important;
+        box-sizing: border-box;
+        flex: 0 0 auto;
+        padding-bottom: 12px;
+      }
+      #shopContainer > .shop-items-grid > .shop-item {
+        width: 100%;
+        height: auto;
+        min-height: 72px;
+        box-sizing: border-box;
+        padding: 8px 5px;
+        font-size: clamp(11px, 3.2vw, 14px);
+        text-align: center;
+        overflow-wrap: anywhere;
+      }
+      #optionContainer:not(.hidden) {
+        width: 100% !important;
+        height: 100dvh !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+      }
+      #optionContainer > div:nth-child(1) {
+        top: max(55px, env(safe-area-inset-top)) !important;
+        font-size: clamp(30px, 9vw, 48px) !important;
+        white-space: nowrap;
+      }
+      #optionContainer > div:nth-child(2) {
+        width: min(320px, calc(100vw - 32px)) !important;
+        height: 68px !important;
+        box-sizing: border-box !important;
+        font-size: clamp(17px, 5vw, 25px) !important;
+        text-align: center;
+      }
+      #optionContainer > div:nth-child(3) {
+        left: 12px !important;
+        bottom: max(12px, env(safe-area-inset-bottom)) !important;
+        width: 100px !important;
+        height: 46px !important;
+        font-size: 18px !important;
+      }
+    }
+
     /* Mobile controls and responsive menus (desktop stays unchanged). */
     html, body { width: 100%; min-height: 100%; }
     #gameContainer { touch-action: none; }
@@ -320,7 +390,20 @@
       .stage-main-layout { transform: none; width: 100%; max-width: calc(100vw - 20px); flex-direction: column; gap: 12px; }
       .stage-main-layout .stage-grid { width: 100%; }
       .stage-container, .stage-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, min(18vw, 78px)); gap: 7px; }
-      #stageContainer { width: calc(100vw - 24px); max-width: 500px; }
+      #stageContainer {
+        width: calc(100vw - 24px);
+        max-width: 500px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      #stageContainer > .stage-main-layout { margin-left: auto; margin-right: auto; align-items: center; }
+      #stageContainer > .stage-grid { width: 100%; max-width: 420px; margin-left: auto; margin-right: auto; }
+      #stageContainer .stage-main-layout .stage-grid { width: 100%; max-width: 420px; margin-left: auto; margin-right: auto; }
       .stage-nine-special { width: min(65vw, 230px); height: 54px; min-height: 54px; flex: none; }
       .stage { min-width: 0; font-size: 14px; }
       .shop-container { padding: 70px 10px 80px; box-sizing: border-box; overflow-y: auto; align-items: flex-start; }

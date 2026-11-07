@@ -757,6 +757,7 @@ shopContainer.appendChild(unlockAllBtn);
     }, shopContainer);
 
     const grid = document.createElement("div");
+    grid.classList.add("shop-items-grid");
     grid.style.display = "grid";
     grid.style.gridTemplateColumns = "repeat(4, 120px)";
     grid.style.gridTemplateRows = "repeat(4, 80px)"; // ⭐ 추가
@@ -1316,7 +1317,7 @@ function getBonus() {
     const targetText = document.createElement("div");
     targetText.className = "score"; // 같은 스타일 재사용
     targetText.style.top = "60px";  // 점수 아래로 내림
-    targetText.textContent = "목표: 50000";
+    targetText.textContent = "목표: 1";
     gameContainer.appendChild(targetText);
 
     // ⭐ CLEAR TEXT 추가
@@ -1464,7 +1465,7 @@ function getBonus() {
     }
 
     // ⭐ 클리어 처리
-    if (score >= 50000 && !window.cleared) {
+    if (score >= 1 && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
@@ -1524,7 +1525,7 @@ function initGame_1_2() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 50000";
+targetText.textContent = "목표: 1";
 gameContainer.appendChild(targetText);
 
   const clearText = document.createElement("div");
@@ -1625,7 +1626,7 @@ function handleKey_1_2(e) {
   }
 
   // ⭐ 클리어 조건 (250점)
-  if (score >= 50000 && !window.cleared) {
+  if (score >= 1 && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
@@ -1667,7 +1668,7 @@ function initGame_1_3() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 50000";
+targetText.textContent = "목표: 1";
 gameContainer.appendChild(targetText);
 
   const clearText = document.createElement("div");
@@ -1774,7 +1775,7 @@ function handleKey_1_3(e) {
     
 
   // ⭐ 클리어 조건 (500점)
-  if (score >= 50000 && !window.cleared) {
+  if (score >= 1 && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
@@ -1815,7 +1816,7 @@ function initGame_1_4() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 50000";
+targetText.textContent = "목표: 1";
 gameContainer.appendChild(targetText);
 
   const clearText = document.createElement("div");
@@ -1988,7 +1989,7 @@ function handleKey_1_4(e) {
     
 
   // ⭐ 클리어 조건 (1000점)
-  if (score >= 50000 && !window.cleared) {
+  if (score >= 1 && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
@@ -2041,7 +2042,7 @@ function initGame_2_1() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 50000";
+targetText.textContent = "목표: 1";
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -2212,7 +2213,7 @@ function handleKey_2_1(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared) {
+  if (score >= 1 && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
@@ -2262,7 +2263,7 @@ function initGame_2_2() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 50000";
+targetText.textContent = "목표: 1";
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -2435,7 +2436,7 @@ function handleKey_2_2(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared) {
+  if (score >= 1 && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
@@ -2484,7 +2485,7 @@ function initGame_2_3() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 50000";
+targetText.textContent = "목표: 1";
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -2655,7 +2656,7 @@ function handleKey_2_3(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared) {
+  if (score >= 1 && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
@@ -2705,7 +2706,7 @@ function initGame_2_4() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 50000";
+targetText.textContent = "목표: 1";
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -3206,7 +3207,7 @@ function handleKey_2_4(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared) {
+  if (score >= 1 && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
@@ -3261,7 +3262,7 @@ function initGame_3_1() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 50000";
+targetText.textContent = "목표: 1";
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -3573,7 +3574,7 @@ function handleKey_3_1(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared) {
+  if (score >= 1 && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
@@ -3624,7 +3625,7 @@ function initGame_3_2() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 50000";
+targetText.textContent = "목표: 1";
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -3936,7 +3937,7 @@ function handleKey_3_2(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared) {
+  if (score >= 1 && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
@@ -3987,7 +3988,7 @@ function initGame_3_3() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 50000";
+targetText.textContent = "목표: 1";
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -4299,7 +4300,7 @@ function handleKey_3_3(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared) {
+  if (score >= 1 && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
@@ -4351,7 +4352,7 @@ function initGame_3_4() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 50000";
+targetText.textContent = "목표: 1";
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -5215,7 +5216,7 @@ function handleKey_3_4(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared) {
+  if (score >= 1 && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
@@ -5298,7 +5299,7 @@ function initGame_4_1() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 50000";
+  targetText.textContent = "목표: 1";
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -6250,7 +6251,7 @@ function handleKey_4_1(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared && !isTimeOut) {
+  if (score >= 1 && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_4_1);
   window.cleared = true;
 
@@ -6325,7 +6326,7 @@ function initGame_4_2() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 50000";
+  targetText.textContent = "목표: 1";
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -7277,7 +7278,7 @@ function handleKey_4_2(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared && !isTimeOut) {
+  if (score >= 1 && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_4_2);
   window.cleared = true;
 
@@ -7358,7 +7359,7 @@ function initGame_4_3() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 50000";
+  targetText.textContent = "목표: 1";
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -8310,7 +8311,7 @@ function handleKey_4_3(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared && !isTimeOut) {
+  if (score >= 1 && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_4_3);
   window.cleared = true;
 
@@ -8387,7 +8388,7 @@ function initGame_4_4() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 50000";
+  targetText.textContent = "목표: 1";
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -9339,7 +9340,7 @@ function handleKey_4_4(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared && !isTimeOut) {
+  if (score >= 1 && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_4_4);
   window.cleared = true;
 
@@ -9406,7 +9407,7 @@ function initGame_5_1() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 50000";
+  targetText.textContent = "목표: 1";
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -10350,7 +10351,7 @@ function changedLine(a, b) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared && !isTimeOut) {
+  if (score >= 1 && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_5_1);
   window.cleared = true;
 
@@ -10421,7 +10422,7 @@ function initGame_5_2() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 50000";
+  targetText.textContent = "목표: 1";
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -11366,7 +11367,7 @@ function changedLine(a, b) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared && !isTimeOut) {
+  if (score >= 1 && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_5_2);
   window.cleared = true;
 
@@ -11438,7 +11439,7 @@ function initGame_6_1() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 50000";
+  targetText.textContent = "목표: 1";
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -12409,7 +12410,7 @@ function changedLine(a, b) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared && !isTimeOut) {
+  if (score >= 1 && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_6_1);
   window.cleared = true;
 
@@ -12495,7 +12496,7 @@ function initGame_6_2() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 50000";
+  targetText.textContent = "목표: 1";
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -13457,7 +13458,7 @@ function changedLine(a, b) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 50000 && !window.cleared && !isTimeOut) {
+  if (score >= 1 && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_6_2);
   window.cleared = true;
 
@@ -13572,7 +13573,7 @@ function startChallengeRound_AI7() {
 
 const AI7 = {
   SIZE: 5,
-  TARGET: 50000,
+  TARGET: 1,
   TIMER_MAX: 10,
 
   player: null,
@@ -15016,7 +15017,7 @@ function initGame_M() {
   targetText.style.fontSize = "18px";
   targetText.style.fontWeight = "bold";
   targetText.style.marginBottom = "0";
-  targetText.textContent = "목표: 50000";
+  targetText.textContent = "목표: 1";
   
 
   const turnText = document.createElement("div");
@@ -15373,7 +15374,7 @@ enemyTargetText.style.color = "#1b5e20";
 enemyTargetText.style.fontSize = "18px";
 enemyTargetText.style.fontWeight = "bold";
 enemyTargetText.style.marginBottom = "10px";
-enemyTargetText.textContent = "목표: 50000";
+enemyTargetText.textContent = "목표: 1";
 
 enemyTurnText = document.createElement("div");
 enemyTurnText.style.color = "#1b5e20";
@@ -16326,8 +16327,8 @@ function handleKey_M(e) {
 }
     
 
-  // ⭐ 클리어 조건 (50000점)
-  if (score >= 50000 && !window.cleared && !isTimeOut) {
+  // ⭐ 클리어 조건 (1점)
+  if (score >= 1 && !window.cleared && !isTimeOut) {
   window.cleared = true;
 
   if (currentRoomId) {
