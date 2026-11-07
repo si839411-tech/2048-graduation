@@ -264,7 +264,60 @@ socket.on("roomError", message => {
 //==멀티==
   let unlocked = JSON.parse(localStorage.getItem("unlocked")) || ["1-1"];
 
-  let coin = Number(localStorage.getItem("coin")) || 1000000;
+  // ===== V13: 스테이지 목표 / 클리어 보상 / 상점 가격 한곳에서 관리 =====
+  // 점수는 실제 score 기준이며, 구입한 아이템의 점수 보너스도 포함된다.
+  const STARTING_COINS = 120;
+  const STAGE_GOALS = Object.freeze({
+    "1-1": 8, "1-2": 300, "1-3": 500, "1-4": 700,
+    "2-1": 500, "2-2": 700, "2-3": 900, "2-4": 1200,
+    "3-1": 1300, "3-2": 1600, "3-3": 1900, "3-4": 2300,
+    "4-1": 900, "4-2": 1200, "4-3": 1500, "4-4": 1900,
+    "5-1": 2000, "5-2": 2800,
+    "6-1": 3000, "6-2": 4000,
+    "7-1": 2400, "8-1": 3000, "9-1": 3000,
+    "multi": 3000
+  });
+  const STAGE_REWARDS = Object.freeze({
+    "1-1": 50, "1-2": 90, "1-3": 120, "1-4": 160,
+    "2-1": 170, "2-2": 220, "2-3": 270, "2-4": 320,
+    "3-1": 400, "3-2": 470, "3-3": 540, "3-4": 630,
+    "4-1": 680, "4-2": 780, "4-3": 900, "4-4": 1050,
+    "5-1": 1200, "5-2": 1500,
+    "6-1": 1900, "6-2": 2400,
+    "7-1": 1300, "8-1": 400, "9-1": 450
+  });
+  const getStageGoal = (main, sub) => STAGE_GOALS[`${main}-${sub}`] ?? 3000;
+  const getStageReward = (main, sub) => STAGE_REWARDS[`${main}-${sub}`] ?? 0;
+  const MULTI_TARGET_SCORE = STAGE_GOALS.multi;
+
+  // 상점의 표시 가격과 실제 결제 가격은 반드시 같은 함수에서 읽는다.
+  function getShopPrice(item, level = 0) {
+    switch (item) {
+      case 1: return 25 * 2 ** level;
+      case 2: return 10 + 7 * level;
+      case 3: return 400;
+      case 4: return 650;
+      case 5: return 130 + 70 * level;
+      case 6: return 70 + 35 * level;
+      case 7: return 1400;
+      case 8: return 2200;
+      case 9: return 1700 * (level + 1) ** 2;
+      case 10: return 2200 * (level + 1) ** 2;
+      case 11: return 220;
+      case 12: return 250;
+      case 13: return 18000;
+      case 14: return 22000;
+      case 15: return 220;
+      case 16: return 12;
+      default: throw new Error(`알 수 없는 아이템 번호: ${item}`);
+    }
+  }
+
+  // 기존 브라우저 저장 데이터를 초기화하지 않기 위해 보유 코인은 보존한다.
+  const savedCoins = localStorage.getItem("coin");
+  let coin = savedCoins === null || !Number.isFinite(Number(savedCoins))
+    ? STARTING_COINS : Math.max(0, Number(savedCoins));
+
   let board = [];
   let score = 0;
  
@@ -700,7 +753,7 @@ resetBtn.className = "shop-item";
 resetBtn.textContent = "상점 초기화";
 
 resetBtn.onclick = () => {
-  if (!confirm("상점 구매 내역을 초기화할까요?")) return;
+  if (!confirm("아이템 구매 내역을 모두 지우고 코인을 120으로 초기화할까요?\n(스테이지 해금 기록은 유지됩니다)")) return;
 
   const keys = [
     "item1Count",
@@ -722,7 +775,7 @@ resetBtn.onclick = () => {
   ];
 
   keys.forEach(key => localStorage.removeItem(key));
-  coin = 1000000;
+  coin = STARTING_COINS;
 localStorage.setItem("coin", coin);
 
   showShop();
@@ -871,7 +924,7 @@ item16.oncontextmenu = e => {
 // ================= 업데이트 함수들 =================
 function updateItem1() {
   let count = Number(localStorage.getItem("item1Count")) || 0;
-  let price = 10 * Math.pow(2, count);
+  let price = getShopPrice(1, count);
 
   item1.textContent =
     count >= 5 ? "아이템1 (MAX)" : `아이템1 Lv.${count}\n${price}`;
@@ -881,7 +934,7 @@ function updateItem1() {
 
 function updateItem2() {
   let count = Number(localStorage.getItem("item2Count")) || 0;
-  let price = 2 * Math.pow(4, count);
+  let price = getShopPrice(2, count);
 
   item2.textContent =
     count >= 10 ? "아이템2 (MAX)" : `아이템2 Lv.${count}\n${price}`;
@@ -892,7 +945,7 @@ function updateItem2() {
 function updateItem3() {
   let owned = localStorage.getItem("item3");
 
-  item3.textContent = owned ? "아이템3 (구입함!)" : "아이템3\n500";
+  item3.textContent = owned ? "아이템3 (구입함!)" : `아이템3\n${getShopPrice(3)}`;
   setShopState(item3, !owned);
 }
 
@@ -911,14 +964,14 @@ function updateItem4() {
     return;
   }
 
-  item4.textContent = "아이템4\n1";
+  item4.textContent = `아이템4\n${getShopPrice(4)}`;
   setShopState(item4, true);
 }
 
 function updateItem5() {
   let item1Count = Number(localStorage.getItem("item1Count")) || 0;
   let count = Number(localStorage.getItem("item5Count")) || 0;
-  let price = 50 * Math.pow(2, count);
+  let price = getShopPrice(5, count);
 
   if (item1Count < 5) {
     item5.textContent = "아이템5 (🔒 아이템1 Lv.5 필요)";
@@ -935,7 +988,7 @@ function updateItem5() {
 function updateItem6() {
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
   let count = Number(localStorage.getItem("item6Count")) || 0;
-  let price = 30 * Math.pow(2, count);
+  let price = getShopPrice(6, count);
 
   if (item2Count < 10) {
     item6.textContent = "아이템6 (🔒 아이템2 Lv.10 필요)";
@@ -964,7 +1017,7 @@ function updateItem7() {
     return;
   }
 
-  item7.textContent = "아이템7\n10";
+  item7.textContent = `아이템7\n${getShopPrice(7)}`;
   setShopState(item7, true);
 }
 
@@ -983,14 +1036,14 @@ function updateItem8() {
     return;
   }
 
-  item8.textContent = "아이템8\n11";
+  item8.textContent = `아이템8\n${getShopPrice(8)}`;
   setShopState(item8, true);
 }
 
 function updateItem9() {
   let item5Count = Number(localStorage.getItem("item5Count")) || 0;
   let count = Number(localStorage.getItem("item9Count")) || 0;
-  let price = 100 * Math.pow(10, count);
+  let price = getShopPrice(9, count);
 
   if (item5Count < 10) {
     item9.textContent = "아이템9 (🔒 아이템5 Lv.10 필요)";
@@ -1007,7 +1060,7 @@ function updateItem9() {
 function updateItem10() {
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let count = Number(localStorage.getItem("item10Count")) || 0;
-  let price = 50 * Math.pow(11, count);
+  let price = getShopPrice(10, count);
 
   if (item6Count < 10) {
     item10.textContent = "아이템10 (🔒 아이템6 Lv.10 필요)";
@@ -1023,20 +1076,20 @@ function updateItem10() {
 
 function updateItem11() {
   let owned = localStorage.getItem("item11");
-  item11.textContent = owned ? "💣 시작 지급 (구매 완료)" : "💣 시작 지급\n15";
+  item11.textContent = owned ? "💣 시작 지급 (구매 완료)" : `💣 시작 지급\n${getShopPrice(11)}`;
   setShopState(item11, !owned);
 }
 
 function updateItem12() {
   let owned = localStorage.getItem("item12");
-  item12.textContent = owned ? "🔫 시작 지급 (구매 완료)" : "🔫 시작 지급\n15";
+  item12.textContent = owned ? "🔫 시작 지급 (구매 완료)" : `🔫 시작 지급\n${getShopPrice(12)}`;
   setShopState(item12, !owned);
 }
 
 function updateItem13() {
   let item9Count = Number(localStorage.getItem("item9Count")) || 0;
   let count = Number(localStorage.getItem("item13Count")) || 0;
-  let price = 10000;
+  let price = getShopPrice(13);
 
   if (item9Count < 2) {
     item13.textContent = "아이템13 (🔒 아이템9 Lv.2 필요)";
@@ -1053,7 +1106,7 @@ function updateItem13() {
 function updateItem14() {
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let count = Number(localStorage.getItem("item14Count")) || 0;
-  let price = 11111;
+  let price = getShopPrice(14);
 
   if (item10Count < 2) {
     item14.textContent = "아이템14 (🔒 아이템10 Lv.2 필요)";
@@ -1069,7 +1122,7 @@ function updateItem14() {
 
 function updateItem15() {
   let owned = localStorage.getItem("item15");
-  item15.textContent = owned ? "🧱 시작 지급 (구매 완료)" : "🧱 시작 지급\n15";
+  item15.textContent = owned ? "🧱 시작 지급 (구매 완료)" : `🧱 시작 지급\n${getShopPrice(15)}`;
   setShopState(item15, !owned);
 }
 
@@ -1085,7 +1138,7 @@ function updateItem16() {
   item16.textContent =
     count >= 10000
       ? "⏱️ 타이머강화 (MAX)"
-      : `⏱️ 타이머강화 Lv.${count}\n50코인 x ${item16BuyAmount}개`;
+      : `⏱️ 타이머강화 Lv.${count}\n${getShopPrice(16)}코인 x ${item16BuyAmount}개`;
 
   setShopState(item16, count < 10000);
 }
@@ -1113,23 +1166,23 @@ function updateAllShopItems() {
 // ================= 클릭 이벤트 =================
 item1.onclick = () => {
   let count = Number(localStorage.getItem("item1Count")) || 0;
-  let price = 10 * Math.pow(2, count);
+  let price = getShopPrice(1, count);
   buyLevelItem("item1Count", price, 5);
 };
 
 item2.onclick = () => {
   let count = Number(localStorage.getItem("item2Count")) || 0;
-  let price = 2 * Math.pow(4, count);
+  let price = getShopPrice(2, count);
   buyLevelItem("item2Count", price, 10);
 };
 
 item3.onclick = () => {
-  buyOnceItem("item3", 500);
+  buyOnceItem("item3", getShopPrice(3));
 };
 
 item4.onclick = () => {
   if (!localStorage.getItem("item3")) return;
-  buyOnceItem("item4", 1);
+  buyOnceItem("item4", getShopPrice(4));
 };
 
 item5.onclick = () => {
@@ -1137,7 +1190,7 @@ item5.onclick = () => {
   if (item1Count < 5) return;
 
   let count = Number(localStorage.getItem("item5Count")) || 0;
-  let price = 50 * Math.pow(2, count);
+  let price = getShopPrice(5, count);
   buyLevelItem("item5Count", price, 10);
 };
 
@@ -1146,18 +1199,18 @@ item6.onclick = () => {
   if (item2Count < 10) return;
 
   let count = Number(localStorage.getItem("item6Count")) || 0;
-  let price = 30 * Math.pow(2, count);
+  let price = getShopPrice(6, count);
   buyLevelItem("item6Count", price, 10);
 };
 
 item7.onclick = () => {
   if (!localStorage.getItem("item4")) return;
-  buyOnceItem("item7", 10);
+  buyOnceItem("item7", getShopPrice(7));
 };
 
 item8.onclick = () => {
   if (!localStorage.getItem("item7")) return;
-  buyOnceItem("item8", 11);
+  buyOnceItem("item8", getShopPrice(8));
 };
 
 item9.onclick = () => {
@@ -1165,7 +1218,7 @@ item9.onclick = () => {
   if (item5Count < 10) return;
 
   let count = Number(localStorage.getItem("item9Count")) || 0;
-  let price = 100 * Math.pow(10, count);
+  let price = getShopPrice(9, count);
   buyLevelItem("item9Count", price, 2);
 };
 
@@ -1174,34 +1227,34 @@ item10.onclick = () => {
   if (item6Count < 10) return;
 
   let count = Number(localStorage.getItem("item10Count")) || 0;
-  let price = 50 * Math.pow(11, count);
+  let price = getShopPrice(10, count);
   buyLevelItem("item10Count", price, 2);
 };
 
 item11.onclick = () => {
-  buyOnceItem("item11", 15);
+  buyOnceItem("item11", getShopPrice(11));
 };
 
 item12.onclick = () => {
-  buyOnceItem("item12", 15);
+  buyOnceItem("item12", getShopPrice(12));
 };
 
 item13.onclick = () => {
   let item9Count = Number(localStorage.getItem("item9Count")) || 0;
   if (item9Count < 2) return;
 
-  buyLevelItem("item13Count", 10000, 1);
+  buyLevelItem("item13Count", getShopPrice(13), 1);
 };
 
 item14.onclick = () => {
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   if (item10Count < 2) return;
 
-  buyLevelItem("item14Count", 11111, 1);
+  buyLevelItem("item14Count", getShopPrice(14), 1);
 };
 
 item15.onclick = () => {
-  buyOnceItem("item15", 15);
+  buyOnceItem("item15", getShopPrice(15));
 };
 
 item16.onclick = () => {
@@ -1211,7 +1264,7 @@ item16.onclick = () => {
   if (count >= 10000) return;
 
   let canBuy = Math.min(item16BuyAmount, 10000 - count);
-  let price = 50 * canBuy;
+  let price = getShopPrice(16) * canBuy;
 
   if (coin < price) {
     alert("코인이 부족합니다");
@@ -1317,7 +1370,7 @@ function getBonus() {
     const targetText = document.createElement("div");
     targetText.className = "score"; // 같은 스타일 재사용
     targetText.style.top = "60px";  // 점수 아래로 내림
-    targetText.textContent = "목표: 1";
+    targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
     gameContainer.appendChild(targetText);
 
     // ⭐ CLEAR TEXT 추가
@@ -1465,14 +1518,14 @@ function getBonus() {
     }
 
     // ⭐ 클리어 처리
-    if (score >= 1 && !window.cleared) {
+    if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 1 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -1525,7 +1578,7 @@ function initGame_1_2() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 1";
+targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
 gameContainer.appendChild(targetText);
 
   const clearText = document.createElement("div");
@@ -1626,14 +1679,14 @@ function handleKey_1_2(e) {
   }
 
   // ⭐ 클리어 조건 (250점)
-  if (score >= 1 && !window.cleared) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 10 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -1668,7 +1721,7 @@ function initGame_1_3() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 1";
+targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
 gameContainer.appendChild(targetText);
 
   const clearText = document.createElement("div");
@@ -1775,14 +1828,14 @@ function handleKey_1_3(e) {
     
 
   // ⭐ 클리어 조건 (500점)
-  if (score >= 1 && !window.cleared) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -1816,7 +1869,7 @@ function initGame_1_4() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 1";
+targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
 gameContainer.appendChild(targetText);
 
   const clearText = document.createElement("div");
@@ -1989,14 +2042,14 @@ function handleKey_1_4(e) {
     
 
   // ⭐ 클리어 조건 (1000점)
-  if (score >= 1 && !window.cleared) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 50 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -2042,7 +2095,7 @@ function initGame_2_1() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 1";
+targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -2214,14 +2267,14 @@ function handleKey_2_1(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -2264,7 +2317,7 @@ function initGame_2_2() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 1";
+targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -2438,14 +2491,14 @@ function handleKey_2_2(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -2487,7 +2540,7 @@ function initGame_2_3() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 1";
+targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -2659,14 +2712,14 @@ function handleKey_2_3(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -2709,7 +2762,7 @@ function initGame_2_4() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 1";
+targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -3211,14 +3264,14 @@ function handleKey_2_4(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -3266,7 +3319,7 @@ function initGame_3_1() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 1";
+targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -3579,14 +3632,14 @@ function handleKey_3_1(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -3630,7 +3683,7 @@ function initGame_3_2() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 1";
+targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -3943,14 +3996,14 @@ function handleKey_3_2(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -3994,7 +4047,7 @@ function initGame_3_3() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 1";
+targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -4307,14 +4360,14 @@ function handleKey_3_3(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -4359,7 +4412,7 @@ function initGame_3_4() {
   const targetText = document.createElement("div");
 targetText.className = "score"; // 같은 스타일 재사용
 targetText.style.top = "60px";  // 점수 아래로 내림
-targetText.textContent = "목표: 1";
+targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
 gameContainer.appendChild(targetText);
 
 const turnText = document.createElement("div");
@@ -5224,14 +5277,14 @@ function handleKey_3_4(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
   let item2Count = Number(localStorage.getItem("item2Count")) || 0;
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -5307,7 +5360,7 @@ function initGame_4_1() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 1";
+  targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -6259,7 +6312,7 @@ function handleKey_4_1(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared && !isTimeOut) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_4_1);
   window.cleared = true;
 
@@ -6267,7 +6320,7 @@ function handleKey_4_1(e) {
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -6334,7 +6387,7 @@ function initGame_4_2() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 1";
+  targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -7286,7 +7339,7 @@ function handleKey_4_2(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared && !isTimeOut) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_4_2);
   window.cleared = true;
 
@@ -7294,7 +7347,7 @@ function handleKey_4_2(e) {
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -7367,7 +7420,7 @@ function initGame_4_3() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 1";
+  targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -8319,7 +8372,7 @@ function handleKey_4_3(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared && !isTimeOut) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_4_3);
   window.cleared = true;
 
@@ -8327,7 +8380,7 @@ function handleKey_4_3(e) {
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -8396,7 +8449,7 @@ function initGame_4_4() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 1";
+  targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -9348,7 +9401,7 @@ function handleKey_4_4(e) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared && !isTimeOut) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_4_4);
   window.cleared = true;
 
@@ -9356,7 +9409,7 @@ function handleKey_4_4(e) {
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -9415,7 +9468,7 @@ function initGame_5_1() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 1";
+  targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -10359,7 +10412,7 @@ function changedLine(a, b) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared && !isTimeOut) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_5_1);
   window.cleared = true;
 
@@ -10367,7 +10420,7 @@ function changedLine(a, b) {
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -10430,7 +10483,7 @@ function initGame_5_2() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 1";
+  targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -11375,7 +11428,7 @@ function changedLine(a, b) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared && !isTimeOut) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_5_2);
   window.cleared = true;
 
@@ -11383,7 +11436,7 @@ function changedLine(a, b) {
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -11447,7 +11500,7 @@ function initGame_6_1() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 1";
+  targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -12418,7 +12471,7 @@ function changedLine(a, b) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared && !isTimeOut) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_6_1);
   window.cleared = true;
 
@@ -12426,7 +12479,7 @@ function changedLine(a, b) {
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -12504,7 +12557,7 @@ function initGame_6_2() {
   const targetText = document.createElement("div");
   targetText.className = "score";
   targetText.style.top = "60px";
-  targetText.textContent = "목표: 1";
+  targetText.textContent = `목표: ${getStageGoal(currentStage.main, currentStage.sub)}`;
   gameContainer.appendChild(targetText);
 
   const turnText = document.createElement("div");
@@ -13466,7 +13519,7 @@ function changedLine(a, b) {
     
 
   // ⭐ 클리어 조건 (3000점)
-  if (score >= 1 && !window.cleared && !isTimeOut) {
+  if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared && !isTimeOut) {
   clearInterval(timerInterval_6_2);
   window.cleared = true;
 
@@ -13474,7 +13527,7 @@ function changedLine(a, b) {
   let item6Count = Number(localStorage.getItem("item6Count")) || 0;
   let item10Count = Number(localStorage.getItem("item10Count")) || 0;
   let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = 30 + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -13522,6 +13575,7 @@ function changedLine(a, b) {
 // 9-1: 난이도 1에서 시작, 승리 +5, 3초 후 다음 대전
 // ===============================
 function initGame_8_1() {
+  AI7.TARGET = getStageGoal(8, 1);
   clearTimeout(AI7.nextRoundTimeout);
   AI7.challengeMode = 8;
   AI7.difficulty = Math.max(1, Math.min(100, Number(localStorage.getItem("ai8Difficulty")) || 1));
@@ -13530,6 +13584,7 @@ function initGame_8_1() {
 }
 
 function initGame_9_1() {
+  AI7.TARGET = getStageGoal(9, 1);
   clearTimeout(AI7.nextRoundTimeout);
   AI7.challengeMode = 9;
   AI7.difficulty = 1;
@@ -13582,7 +13637,7 @@ function startChallengeRound_AI7() {
 
 const AI7 = {
   SIZE: 5,
-  TARGET: 1,
+  TARGET: getStageGoal(7, 1),
   TIMER_MAX: 10,
 
   player: null,
@@ -13611,6 +13666,7 @@ const AI7 = {
 };
 
 function initGame_7_1() {
+  AI7.TARGET = getStageGoal(7, 1);
   AI7.challengeMode = null;
   clearTimeout(AI7.nextRoundTimeout);
   const item16Count = Number(localStorage.getItem("item16Count")) || 0;
@@ -14989,7 +15045,7 @@ function finishAI7(result, reason) {
       AI7.resultText.textContent = `도전 종료! ${AI7.streak}연승 | ${reason}`;
     }
     if (won) {
-      coin += 30;
+      coin += getStageReward(mode, 1);
       localStorage.setItem("coin", String(coin));
       if (typeof updateCoin === "function") updateCoin();
     }
@@ -14997,7 +15053,7 @@ function finishAI7(result, reason) {
   }
 
   if (result === "WIN!") {
-    let reward = 30;
+    let reward = getStageReward(7, 1);
     coin += reward;
     localStorage.setItem("coin", coin);
 
@@ -15187,7 +15243,7 @@ function initGame_M() {
   targetText.style.fontSize = "18px";
   targetText.style.fontWeight = "bold";
   targetText.style.marginBottom = "0";
-  targetText.textContent = "목표: 1";
+  targetText.textContent = `목표: ${MULTI_TARGET_SCORE}`;
   
 
   const turnText = document.createElement("div");
@@ -15552,7 +15608,7 @@ enemyTargetText.style.color = "#1b5e20";
 enemyTargetText.style.fontSize = "18px";
 enemyTargetText.style.fontWeight = "bold";
 enemyTargetText.style.marginBottom = "10px";
-enemyTargetText.textContent = "목표: 1";
+enemyTargetText.textContent = `목표: ${MULTI_TARGET_SCORE}`;
 
 enemyTurnText = document.createElement("div");
 enemyTurnText.style.color = "#1b5e20";
@@ -16513,8 +16569,8 @@ function handleKey_M(e) {
 }
     
 
-  // ⭐ 클리어 조건 (1점)
-  if (score >= 1 && !window.cleared && !isTimeOut) {
+  // ⭐ 멀티 클리어 조건 (MULTI_TARGET_SCORE)
+  if (score >= MULTI_TARGET_SCORE && !window.cleared && !isTimeOut) {
   window.cleared = true;
 
   if (currentRoomId) {
