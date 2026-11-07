@@ -87,8 +87,47 @@
     }
   }
   /* Fit the actual grid tracks, not a transformed board with oversized cells. */
+  // Desktop: anchor item slots to the actual board edge, not the viewport edge.
+  function positionDesktopItems() {
+    const panels = [...game.querySelectorAll('.game-item-panel, .game-item-panel-inline')]
+      .filter(p => !p.closest('.multi-enemy-side, .ai-enemy-side'));
+    if (mobile.matches) {
+      panels.forEach(p => {
+        if (p.dataset.desktopSlotAnchor === '1') {
+          ['position','left','right','top','bottom','transform','flex-direction','z-index'].forEach(k => p.style.removeProperty(k));
+          delete p.dataset.desktopSlotAnchor;
+        }
+      });
+      return;
+    }
+    if (game.classList.contains('hidden')) return;
+    const boards = [...game.querySelectorAll('.board')]
+      .filter(b => !b.closest('.multi-enemy-side, .ai-enemy-side'));
+    for (const panel of panels) {
+      const board = boards.find(b => b.parentElement === panel.parentElement) || boards[0];
+      if (!board) continue;
+      const rect = board.getBoundingClientRect();
+      if (!rect.width || !rect.height) continue;
+      const panelWidth = panel.getBoundingClientRect().width || 70;
+      const gap = 14;
+      // Prefer the board's right side, with a left-side fallback on narrow desktop windows.
+      const rightSpace = window.innerWidth - rect.right;
+      const left = rightSpace >= panelWidth + gap + 8
+        ? rect.right + gap : Math.max(8, rect.left - panelWidth - gap);
+      panel.style.setProperty('position', 'fixed', 'important');
+      panel.style.setProperty('left', `${Math.round(left)}px`, 'important');
+      panel.style.setProperty('right', 'auto', 'important');
+      panel.style.setProperty('top', `${Math.round(rect.top)}px`, 'important');
+      panel.style.setProperty('bottom', 'auto', 'important');
+      panel.style.setProperty('transform', 'none', 'important');
+      panel.style.setProperty('flex-direction', 'column', 'important');
+      panel.style.setProperty('z-index', '30', 'important');
+      panel.dataset.desktopSlotAnchor = '1';
+    }
+  }
   function fitGame() {
     pad.style.display = mobile.matches && !game.classList.contains('hidden') ? 'grid' : 'none';
+    positionDesktopItems();
     if (!mobile.matches) return;
     normalizeStagePanels();
     organizeControls();
