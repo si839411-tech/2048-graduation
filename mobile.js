@@ -28,8 +28,16 @@
   function organizeControls() {
     if (!mobile.matches || game.classList.contains('hidden')) return;
     if (toolbar.parentElement !== game) game.appendChild(toolbar);
+    // Only one back control on mobile. Prefer the latest stage-created control,
+    // retaining its original click handler; remove stale duplicates.
     const backs = [...game.querySelectorAll('.back-btn, .multi-back-btn')];
-    backs.forEach(btn => { if (btn.parentElement !== toolbar) toolbar.appendChild(btn); });
+    if (backs.length) {
+      const active = backs[backs.length - 1];
+      for (const btn of backs) {
+        if (btn !== active) btn.remove();
+      }
+      if (active.parentElement !== toolbar) toolbar.prepend(active);
+    }
     if (pad.parentElement !== toolbar) toolbar.appendChild(pad);
   }
   let start = null;
