@@ -13554,8 +13554,9 @@ function startChallengeRound_AI7() {
   applyStartItems_AI7(AI7.ai);
   createAI7Layout();
   AI7.challengeStatus = document.createElement("div");
-  AI7.challengeStatus.style.cssText = "position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#e8f5e9;color:#1b5e20;padding:10px 18px;border-radius:10px;font-weight:bold;z-index:10";
-  AI7.challengeStatus.textContent = `AI${AI7.challengeMode}-1 | 난이도 ${AI7.difficulty}/100` + (AI7.challengeMode === 9 ? ` | 연승 ${AI7.streak}` : "");
+  AI7.challengeStatus.className = "ai-challenge-difficulty";
+  AI7.challengeStatus.style.cssText = "position:absolute;top:12px;left:12px;background:#e8f5e9;color:#1b5e20;padding:7px 10px;border-radius:8px;font-weight:bold;z-index:10";
+  AI7.challengeStatus.textContent = `난이도 ${AI7.difficulty}/100`;
   gameContainer.appendChild(AI7.challengeStatus);
   drawAI7();
   resetTimer_AI7(AI7.player);
@@ -13640,8 +13641,9 @@ applyStartItems_AI7(AI7.ai);
   createAI7Layout();
   if (AI7.challengeMode) {
     AI7.challengeStatus = document.createElement("div");
-    AI7.challengeStatus.style.cssText = "position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#e8f5e9;color:#1b5e20;padding:10px 18px;border-radius:10px;font-weight:bold;z-index:10";
-    AI7.challengeStatus.textContent = `AI${AI7.challengeMode}-1 | 난이도 ${AI7.difficulty}/100` + (AI7.challengeMode === 9 ? ` | 연승 ${AI7.streak}` : "");
+    AI7.challengeStatus.className = "ai-challenge-difficulty";
+  AI7.challengeStatus.style.cssText = "position:absolute;top:12px;left:12px;background:#e8f5e9;color:#1b5e20;padding:7px 10px;border-radius:8px;font-weight:bold;z-index:10";
+    AI7.challengeStatus.textContent = `난이도 ${AI7.difficulty}/100`;
     gameContainer.appendChild(AI7.challengeStatus);
   }
 
@@ -13776,7 +13778,10 @@ function createAI7Layout() {
   AI7.resultText.style.top = "50%";
   AI7.resultText.style.left = "50%";
   AI7.resultText.style.transform = "translate(-50%, -50%)";
-  AI7.resultText.style.fontSize = "55px";
+  AI7.resultText.style.fontSize = "clamp(22px, 5vw, 36px)";
+  AI7.resultText.style.width = "min(92vw, 460px)";
+  AI7.resultText.style.textAlign = "center";
+  AI7.resultText.style.zIndex = "50";
   AI7.resultText.style.fontWeight = "bold";
   AI7.resultText.style.display = "none";
   gameContainer.appendChild(AI7.resultText);
@@ -14763,24 +14768,21 @@ function updateOneTimer_AI7(side, bar) {
 }
 
 function checkResult_AI7() {
-  if (AI7.player.score >= AI7.TARGET) {
-    finishAI7("WIN!", "CLEAR!");
+  if (AI7.ended) return;
+  // Test target may be as low as 1. If both players have reached it,
+  // compare scores instead of awarding the win to whichever condition is checked first.
+  const playerReached = AI7.player.score >= AI7.TARGET;
+  const aiReached = AI7.ai.score >= AI7.TARGET;
+  if (playerReached && aiReached) {
+    if (AI7.player.score > AI7.ai.score) finishAI7("WIN!", "점수 우세!");
+    else if (AI7.player.score < AI7.ai.score) finishAI7("LOSE!", "AI 점수 우세!");
+    // Equal scores: keep playing until the tie breaks.
     return;
   }
-
-  if (AI7.ai.score >= AI7.TARGET) {
-    finishAI7("LOSE!", "AI CLEAR!");
-    return;
-  }
-
-  if (!canMove_AI7(AI7.player)) {
-    finishAI7("LOSE!", "이동 불가!");
-    return;
-  }
-
-  if (!canMove_AI7(AI7.ai)) {
-    finishAI7("WIN!", "상대 이동 불가!");
-  }
+  if (playerReached) { finishAI7("WIN!", "CLEAR!"); return; }
+  if (aiReached) { finishAI7("LOSE!", "AI CLEAR!"); return; }
+  if (!canMove_AI7(AI7.player)) { finishAI7("LOSE!", "이동 불가!"); return; }
+  if (!canMove_AI7(AI7.ai)) finishAI7("WIN!", "상대 이동 불가!");
 }
 
 function canMove_AI7(side) {

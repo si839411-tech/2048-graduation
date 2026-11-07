@@ -625,6 +625,22 @@
  #gameContainer .game-item-panel, #gameContainer .game-item-panel-inline { position: static !important; display: flex !important; flex-flow: row nowrap !important; width: min(100%, 340px) !important; overflow-x: auto !important; margin: 12px auto !important; }
  .mobile-direction-pad { right: 8px !important; bottom: max(12px, env(safe-area-inset-bottom)) !important; }
 }
+
+/* AI competition mobile layout V5: separate header, score, board and result. */
+@media (max-width: 700px) {
+  #gameContainer:has(.ai-competition-layout) { padding-top: 65px !important; }
+  #gameContainer .ai-challenge-difficulty {
+    position: absolute !important; top: 10px !important; left: 10px !important;
+    right: auto !important; transform: none !important; max-width: 45vw !important;
+    font-size: 14px !important; text-align: left !important; white-space: nowrap !important;
+  }
+  #gameContainer .ai-competition-layout { margin-top: 18px !important; gap: 12px !important; }
+  #gameContainer .ai-my-side { gap: 8px !important; padding-top: 8px !important; }
+  #gameContainer .ai-my-side > div { flex-shrink: 0; }
+  #gameContainer .ai-my-side .board { margin-top: 22px !important; }
+  #gameContainer .ai-my-side .mobile-opponent-score { margin: 4px auto 8px !important; }
+  #gameContainer .ai-competition-layout + div:not(.ai-challenge-difficulty) { max-width: 92vw !important; }
+}
 </style>
 </head>
 <body>
