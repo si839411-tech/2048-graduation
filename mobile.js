@@ -43,10 +43,37 @@
   }, { passive: true });
   game.addEventListener('touchcancel', () => { start = null; }, { passive: true });
 
+  // Normalize older stage item panels which were created without a CSS class.
+  // Move them after their board instead of positioning over the board.
+  function normalizeStagePanels() {
+    if (!mobile.matches) return;
+    const boards = [...game.querySelectorAll('.board')];
+    if (!boards.length) return;
+    const known = [...game.querySelectorAll('.game-item-panel, .game-item-panel-inline, .mobile-item-row')];
+    const slotCandidates = [...game.querySelectorAll('div')].filter(el => {
+      if (el === game || el.classList.contains('board') || el.closest('.board')) return false;
+      if (el.closest('.multi-enemy-side, .ai-enemy-side')) return false;
+      if (known.includes(el)) return false;
+      if (el.children.length !== 3) return false;
+      return [...el.children].every(child => child.tagName === 'DIV' &&
+        (child.style.border.includes('solid') || child.style.background === 'rgb(238, 238, 238)' || child.style.background === '#eee'));
+    });
+    for (const panel of [...known, ...slotCandidates]) {
+      if (panel.closest('.multi-enemy-side, .ai-enemy-side')) continue;
+      if (!panel.classList.contains('game-item-panel') && !panel.classList.contains('game-item-panel-inline')) {
+        panel.classList.add('mobile-item-row');
+      }
+      const localBoard = boards.find(b => b.parentElement === panel.parentElement) || boards[0];
+      if (panel.parentElement === localBoard.parentElement && localBoard.nextElementSibling !== panel) {
+        localBoard.insertAdjacentElement('afterend', panel);
+      }
+    }
+  }
   /* Fit the actual grid tracks, not a transformed board with oversized cells. */
   function fitGame() {
     pad.style.display = mobile.matches && !game.classList.contains('hidden') ? 'grid' : 'none';
     if (!mobile.matches) return;
+    normalizeStagePanels();
     game.querySelectorAll('.board').forEach(board => {
       const raw = board.style.gridTemplateColumns || '';
       const match = raw.match(/repeat\(\s*(\d+)\s*,/);
@@ -80,7 +107,7 @@
   // Mobile item activation: reuse the currently active stage's A/S/D item shortcuts.
   game.addEventListener('click', (e) => {
     if (!mobile.matches || game.classList.contains('hidden')) return;
-    const slot = e.target.closest('.game-item-panel > *, .game-item-panel-inline > *');
+    const slot = e.target.closest('.game-item-panel > *, .game-item-panel-inline > *, .mobile-item-row > *');
     if (!slot || slot.closest('.multi-enemy-side, .ai-enemy-side')) return;
     const panel = slot.parentElement;
     const index = Array.prototype.indexOf.call(panel.children, slot);
@@ -96,7 +123,7 @@
   });
   function labelItemSlots() {
     if (!mobile.matches) return;
-    game.querySelectorAll('.game-item-panel, .game-item-panel-inline').forEach(panel => {
+    game.querySelectorAll('.game-item-panel, .game-item-panel-inline, .mobile-item-row').forEach(panel => {
       if (panel.closest('.multi-enemy-side, .ai-enemy-side')) return;
       Array.from(panel.children).slice(0, 3).forEach((slot, i) => {
         slot.setAttribute('role', 'button');
