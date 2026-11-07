@@ -423,6 +423,39 @@
       .mobile-direction-pad button:nth-child(3) { grid-column: 2; grid-row: 2; }
       .mobile-direction-pad button:nth-child(4) { grid-column: 3; grid-row: 2; }
     }
+
+    /* Mobile game HUD: items below the board; single-player and multiplayer. */
+    @media (max-width: 700px) {
+      #gameContainer:not(.hidden) { box-sizing: border-box; padding: 75px 8px 135px; }
+      #gameContainer .game-item-panel {
+        position: absolute !important;
+        top: auto !important;
+        right: auto !important;
+        bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+        gap: 10px !important;
+        z-index: 50;
+        max-width: calc(100vw - 20px);
+      }
+      #gameContainer .game-item-panel-inline { flex-direction: row !important; justify-content: center; max-width: 100%; }
+      #gameContainer .multi-battle-layout { justify-content: center; align-items: center; }
+      #gameContainer .multi-my-side {
+        width: 100% !important; max-width: 100% !important;
+        border-right: none !important; box-sizing: border-box;
+      }
+      #gameContainer .multi-enemy-side { display: none !important; }
+      #gameContainer .multi-enemy-score {
+        display: block !important; font-size: 18px !important;
+        margin-bottom: 2px !important; text-align: center;
+      }
+      #gameContainer .multi-my-side > div:first-child { margin-bottom: 8px !important; }
+    }
   </style>
 </head>
 <body>

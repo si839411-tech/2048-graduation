@@ -2071,6 +2071,7 @@ gameContainer.appendChild(turnText);
   gameContainer.appendChild(boardDiv);
 
   const itemPanel = document.createElement("div");
+itemPanel.classList.add("game-item-panel");
 itemPanel.style.position = "absolute";
 itemPanel.style.right = "50px";
 itemPanel.style.top = "150px";
@@ -2292,6 +2293,7 @@ gameContainer.appendChild(turnText);
   gameContainer.appendChild(boardDiv);
 
   const itemPanel = document.createElement("div");
+itemPanel.classList.add("game-item-panel");
 itemPanel.style.position = "absolute";
 itemPanel.style.right = "50px";
 itemPanel.style.top = "150px";
@@ -2514,6 +2516,7 @@ gameContainer.appendChild(turnText);
   gameContainer.appendChild(boardDiv);
 
   const itemPanel = document.createElement("div");
+itemPanel.classList.add("game-item-panel");
 itemPanel.style.position = "absolute";
 itemPanel.style.right = "50px";
 itemPanel.style.top = "150px";
@@ -2735,6 +2738,7 @@ gameContainer.appendChild(turnText);
   gameContainer.appendChild(boardDiv);
 
   const itemPanel = document.createElement("div");
+itemPanel.classList.add("game-item-panel");
 itemPanel.style.position = "absolute";
 itemPanel.style.right = "50px";
 itemPanel.style.top = "150px";
@@ -3291,6 +3295,7 @@ gameContainer.appendChild(turnText);
   gameContainer.appendChild(boardDiv);
 
   const itemPanel = document.createElement("div");
+itemPanel.classList.add("game-item-panel");
 itemPanel.style.position = "absolute";
 itemPanel.style.right = "50px";
 itemPanel.style.top = "150px";
@@ -3654,6 +3659,7 @@ gameContainer.appendChild(turnText);
   gameContainer.appendChild(boardDiv);
 
   const itemPanel = document.createElement("div");
+itemPanel.classList.add("game-item-panel");
 itemPanel.style.position = "absolute";
 itemPanel.style.right = "50px";
 itemPanel.style.top = "150px";
@@ -4017,6 +4023,7 @@ gameContainer.appendChild(turnText);
   gameContainer.appendChild(boardDiv);
 
   const itemPanel = document.createElement("div");
+itemPanel.classList.add("game-item-panel");
 itemPanel.style.position = "absolute";
 itemPanel.style.right = "50px";
 itemPanel.style.top = "150px";
@@ -4381,6 +4388,7 @@ gameContainer.appendChild(turnText);
   gameContainer.appendChild(boardDiv);
 
   const itemPanel = document.createElement("div");
+itemPanel.classList.add("game-item-panel");
 itemPanel.style.position = "absolute";
 itemPanel.style.right = "50px";
 itemPanel.style.top = "150px";
@@ -13822,6 +13830,7 @@ function createAI7Panel(titleText) {
 
   timerBox.appendChild(timerBar);
   const itemPanel = document.createElement("div");
+itemPanel.classList.add("game-item-panel-inline");
 itemPanel.style.display = "flex";
 itemPanel.style.gap = "10px";
 itemPanel.style.marginTop = "15px";
@@ -15056,6 +15065,7 @@ timerBar.style.transition = "width 0.2s linear";
 timerBarContainer.appendChild(timerBar);
 
 const itemPanel = document.createElement("div");
+itemPanel.classList.add("game-item-panel-inline");
 itemPanel.style.display = "flex";
 itemPanel.style.gap = "10px";
 itemPanel.style.marginTop = "15px";
@@ -15076,6 +15086,7 @@ boardWrapper.appendChild(itemPanel);
   myInfoBox.style.marginBottom = "15px";
 
   myInfoBox.appendChild(scoreText);
+  if (currentRoomId && enemyScoreText) myInfoBox.appendChild(enemyScoreText);
   myInfoBox.appendChild(nextPreview);
   myInfoBox.appendChild(targetText);
   myInfoBox.appendChild(turnText);
@@ -15309,11 +15320,13 @@ function createMultiBattleLayout() {
   gameContainer.innerHTML = "";
 
 const battleWrapper = document.createElement("div");
+battleWrapper.classList.add("multi-battle-layout");
 battleWrapper.style.display = "flex";
 battleWrapper.style.width = "100%";
 battleWrapper.style.height = "100%";
 
 const mySide = document.createElement("div");
+mySide.classList.add("multi-my-side");
 mySide.style.width = "50%";
 mySide.style.height = "100%";
 mySide.style.display = "flex";
@@ -15324,6 +15337,7 @@ mySide.style.borderRight = "4px solid #81c784";
 mySide.style.position = "relative";
 
 const enemySide = document.createElement("div");
+enemySide.classList.add("multi-enemy-side");
 enemySide.style.width = "50%";
 enemySide.style.height = "100%";
 enemySide.style.display = "flex";
@@ -15356,6 +15370,7 @@ myResultText.style.marginTop = "20px";
 myResultText.style.display = "none";
 
 enemyScoreText = document.createElement("div");
+enemyScoreText.classList.add("multi-enemy-score");
 enemyScoreText.style.color = "#1b5e20";
 enemyScoreText.style.fontSize = "22px";
 enemyScoreText.style.fontWeight = "bold";
