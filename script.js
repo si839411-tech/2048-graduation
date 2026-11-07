@@ -264,7 +264,7 @@ socket.on("roomError", message => {
 //==멀티==
   let unlocked = JSON.parse(localStorage.getItem("unlocked")) || ["1-1"];
 
-  // ===== V13: 스테이지 목표 / 클리어 보상 / 상점 가격 한곳에서 관리 =====
+  // ===== V14: 단계별 목표 / 경제 / 대전 모드 별도 밸런스 =====
   // 점수는 실제 score 기준이며, 구입한 아이템의 점수 보너스도 포함된다.
   const STARTING_COINS = 120;
   const STAGE_GOALS = Object.freeze({
@@ -274,7 +274,7 @@ socket.on("roomError", message => {
     "4-1": 900, "4-2": 1200, "4-3": 1500, "4-4": 1900,
     "5-1": 2000, "5-2": 2800,
     "6-1": 3000, "6-2": 4000,
-    "7-1": 2400, "8-1": 3000, "9-1": 3000,
+    "7-1": 2400, "8-1": 5000, "9-1": 5500,
     "multi": 3000
   });
   const STAGE_REWARDS = Object.freeze({
@@ -284,33 +284,56 @@ socket.on("roomError", message => {
     "4-1": 680, "4-2": 780, "4-3": 900, "4-4": 1050,
     "5-1": 1200, "5-2": 1500,
     "6-1": 1900, "6-2": 2400,
-    "7-1": 1300, "8-1": 400, "9-1": 450
+    "7-1": 1300 // 8/9-1은 상대 난이도 및 연승에 따른 동적 승리 보상 사용
   });
   const getStageGoal = (main, sub) => STAGE_GOALS[`${main}-${sub}`] ?? 3000;
   const getStageReward = (main, sub) => STAGE_REWARDS[`${main}-${sub}`] ?? 0;
   const MULTI_TARGET_SCORE = STAGE_GOALS.multi;
 
-  // 상점의 표시 가격과 실제 결제 가격은 반드시 같은 함수에서 읽는다.
+  // 가격은 단계마다 고정 금액만큼 증가한다(배수/제곱 인상 없음).
+  // 표시 가격과 실제 결제 가격은 반드시 같은 함수에서 읽는다.
   function getShopPrice(item, level = 0) {
     switch (item) {
-      case 1: return 25 * 2 ** level;
-      case 2: return 10 + 7 * level;
-      case 3: return 400;
-      case 4: return 650;
-      case 5: return 130 + 70 * level;
-      case 6: return 70 + 35 * level;
-      case 7: return 1400;
-      case 8: return 2200;
-      case 9: return 1700 * (level + 1) ** 2;
-      case 10: return 2200 * (level + 1) ** 2;
-      case 11: return 220;
-      case 12: return 250;
-      case 13: return 18000;
-      case 14: return 22000;
-      case 15: return 220;
-      case 16: return 12;
+      case 1: return 35 + 25 * level;      // 점수 +1/합치기: 총 425
+      case 2: return 20 + 10 * level;      // 코인 +1/클리어: 총 650
+      case 3: return 450;
+      case 4: return 750;
+      case 5: return 200 + 80 * level;     // 점수 +10/합치기: 총 5600
+      case 6: return 90 + 30 * level;      // 코인 +5/클리어: 총 2250
+      case 7: return 1600;
+      case 8: return 2600;
+      case 9: return 2400 + 1400 * level; // 점수 +100/합치기: 총 6200
+      case 10: return 1800 + 1000 * level;// 코인 +100/클리어: 총 4600
+      case 11: return 240;
+      case 12: return 280;
+      case 13: return 14500;
+      case 14: return 15500;
+      case 15: return 250;
+      case 16: return 12;                  // 7-1 해금 준비 비용 600x12=7200
       default: throw new Error(`알 수 없는 아이템 번호: ${item}`);
     }
+  }
+
+  // 낮은 난이도 스테이지를 보너스 아이템으로 무한 반복해 코인을 폭증시키는 현상 방지.
+  // 상점의 클리어 코인 보너스는 해당 스테이지 기본 보상의 최대 75%까지 인정.
+  function getStageClearReward(main, sub) {
+    const base = getStageReward(main, sub);
+    const bonus = (Number(localStorage.getItem("item2Count")) || 0)
+      + (Number(localStorage.getItem("item6Count")) || 0) * 5
+      + (Number(localStorage.getItem("item10Count")) || 0) * 100
+      + (Number(localStorage.getItem("item14Count")) || 0) * 2000;
+    return base + Math.min(bonus, Math.floor(base * 0.75));
+  }
+
+  // 8/9 대전 모드: 양측 모두 4/8/16(70%/25%/5%) 타일로 플레이. 상점 강화는 OFF.
+  // 8-1은 AI 난이도, 9-1은 AI 난이도 + 현재 도전 연승 수로 보상을 정한다.
+  function getChallengeReward(mode, difficulty, streak) {
+    const level = Math.max(1, Math.min(100, Number(difficulty) || 1));
+    const wins = Math.max(1, Number(streak) || 1);
+    const raw = mode === 9
+      ? 320 + 10 * (level - 1) + 30 * (wins - 1)
+      : 250 + 12 * (level - 1);
+    return Math.round(raw / 10) * 10;
   }
 
   // 기존 브라우저 저장 데이터를 초기화하지 않기 위해 보유 코인은 보존한다.
@@ -1521,11 +1544,7 @@ function getBonus() {
     if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -1682,11 +1701,7 @@ function handleKey_1_2(e) {
   if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -1831,11 +1846,7 @@ function handleKey_1_3(e) {
   if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -2045,11 +2056,7 @@ function handleKey_1_4(e) {
   if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -2270,11 +2277,7 @@ function handleKey_2_1(e) {
   if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -2494,11 +2497,7 @@ function handleKey_2_2(e) {
   if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -2715,11 +2714,7 @@ function handleKey_2_3(e) {
   if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -3267,11 +3262,7 @@ function handleKey_2_4(e) {
   if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -3635,11 +3626,7 @@ function handleKey_3_1(e) {
   if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -3999,11 +3986,7 @@ function handleKey_3_2(e) {
   if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -4363,11 +4346,7 @@ function handleKey_3_3(e) {
   if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -5280,11 +5259,7 @@ function handleKey_3_4(e) {
   if (score >= getStageGoal(currentStage.main, currentStage.sub) && !window.cleared) {
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -6316,11 +6291,7 @@ function handleKey_4_1(e) {
   clearInterval(timerInterval_4_1);
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -7343,11 +7314,7 @@ function handleKey_4_2(e) {
   clearInterval(timerInterval_4_2);
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -8376,11 +8343,7 @@ function handleKey_4_3(e) {
   clearInterval(timerInterval_4_3);
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -9405,11 +9368,7 @@ function handleKey_4_4(e) {
   clearInterval(timerInterval_4_4);
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -10416,11 +10375,7 @@ function changedLine(a, b) {
   clearInterval(timerInterval_5_1);
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -11432,11 +11387,7 @@ function changedLine(a, b) {
   clearInterval(timerInterval_5_2);
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -12475,11 +12426,7 @@ function changedLine(a, b) {
   clearInterval(timerInterval_6_1);
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -13523,11 +13470,7 @@ function changedLine(a, b) {
   clearInterval(timerInterval_6_2);
   window.cleared = true;
 
-  let item2Count = Number(localStorage.getItem("item2Count")) || 0;
-  let item6Count = Number(localStorage.getItem("item6Count")) || 0;
-  let item10Count = Number(localStorage.getItem("item10Count")) || 0;
-  let item14Count = Number(localStorage.getItem("item14Count")) || 0;
-  let reward = getStageReward(currentStage.main, currentStage.sub) + item2Count + (item6Count * 5) + (item10Count * 100) + (item14Count * 2000);
+  let reward = getStageClearReward(currentStage.main, currentStage.sub);
 
   coin += reward;
   localStorage.setItem("coin", coin);
@@ -13607,13 +13550,16 @@ function startChallengeRound_AI7() {
     addRandom_AI7(AI7.player);
     addRandom_AI7(AI7.ai);
   }
-  applyStartItems_AI7(AI7.player);
-  applyStartItems_AI7(AI7.ai);
+  // 챌린지(8/9)는 상점에서 산 시작 아이템도 적용하지 않는다.
+  // 대전 중 얻는 아이템과 방해물은 양측의 공통 규칙으로 유지한다.
   createAI7Layout();
   AI7.challengeStatus = document.createElement("div");
   AI7.challengeStatus.className = "ai-challenge-difficulty";
   AI7.challengeStatus.style.cssText = "position:absolute;top:12px;left:12px;background:#e8f5e9;color:#1b5e20;padding:7px 10px;border-radius:8px;font-weight:bold;z-index:10";
-  AI7.challengeStatus.textContent = `난이도 ${AI7.difficulty}/100`;
+  AI7.challengeStatus.style.fontSize = "clamp(11px, 1.7vw, 14px)";
+  AI7.challengeStatus.style.maxWidth = "calc(100% - 24px)";
+  AI7.challengeStatus.textContent = `난이도 ${AI7.difficulty}/100 · 승리 +${getChallengeReward(AI7.challengeMode, AI7.difficulty, AI7.streak + 1)} Coin · 상점 OFF`;
+  AI7.challengeStatus.title = "상점 강화는 적용되지 않습니다. 대전 중 얻는 아이템은 사용할 수 있습니다.";
   gameContainer.appendChild(AI7.challengeStatus);
   drawAI7();
   resetTimer_AI7(AI7.player);
@@ -13730,6 +13676,7 @@ applyStartItems_AI7(AI7.ai);
 }
 
 function getScoreBonus_AI7() {
+  if (AI7.challengeMode) return 0;
   const bonus1 = Number(localStorage.getItem("item1Count")) || 0;
   const bonus5 = Number(localStorage.getItem("item5Count")) || 0;
   const bonus9 = Number(localStorage.getItem("item9Count")) || 0;
@@ -13739,6 +13686,12 @@ function getScoreBonus_AI7() {
 }
 
 function getSpawnValue_AI7() {
+  if (AI7.challengeMode) {
+    // 8/9: 상점 강화와 무관한 동일한 타일 확률(플레이어·AI 공통).
+    // 합치기 쉬운 4를 자주 생성하여 5x5/턴당 2개 생성 규칙에서 급격한 포화 완화.
+    const r = Math.random();
+    return r < 0.70 ? 4 : r < 0.95 ? 8 : 16;
+  }
   let value;
 
   if (localStorage.getItem("item8")) {
@@ -14129,6 +14082,7 @@ function aiMove_AI7() {
 }
 
 function getSpawnDistribution_AI7() {
+  if (AI7.challengeMode) return [[4,0.70],[8,0.25],[16,0.05]];
   if (localStorage.getItem('item8')) return [[32,0.5],[64,0.3],[128,0.2]];
   if (localStorage.getItem('item7')) return [[16,0.5],[32,0.3],[64,0.2]];
   if (localStorage.getItem('item4')) return [[8,0.5],[16,0.3],[32,0.2]];
@@ -14189,7 +14143,7 @@ function requestExpectimax_AI7() {
   }, budgetMs + 100);
   try {
     // 현재 이동은 실제 게임 시뮬레이션 결과를 사용하며,
-    // 이후 확률 노드에서 실제 규칙대로 타일을 두 개 생성한다.
+    // 이후 확률 노드에서는 실제 타일 확률로 두 개 생성한다(생성 개수는 V14와 동일).
     worker.postMessage({
       id:requestId, level:AI7.difficulty, budgetMs, spawn:getSpawnDistribution_AI7(),
       mergeBonus:getScoreBonus_AI7(),
@@ -14940,6 +14894,7 @@ else cell.textContent = side.board[i][j] || "";
 }
 
 function getMaxTimer_AI7(side) {
+  if (AI7.challengeMode) return 10; // 8/9는 타이머 강화 아이템 16 미적용
   if (side === AI7.player) {
     const item16Count = Number(localStorage.getItem("item16Count")) || 0;
     return 10 + item16Count * 0.1;
@@ -15026,17 +14981,18 @@ function finishAI7(result, reason) {
     const mode = AI7.challengeMode;
     const oldDifficulty = AI7.difficulty;
     const won = result === "WIN!";
+    const reward = won ? getChallengeReward(mode, oldDifficulty, mode === 9 ? AI7.streak + 1 : 1) : 0;
     if (mode === 8) {
       AI7.difficulty = Math.max(1, Math.min(100, oldDifficulty + (won ? 5 : -2)));
       localStorage.setItem("ai8Difficulty", String(AI7.difficulty));
-      AI7.resultText.textContent = `${result} ${reason} | 다음 난이도: ${AI7.difficulty}`;
+      AI7.resultText.textContent = `${result} ${reason}${won ? ` | +${reward} Coin` : ""} | 다음 난이도: ${AI7.difficulty}`;
     } else if (won) {
       AI7.streak++;
       if (oldDifficulty === 100) {
-        AI7.resultText.textContent = `완전 정복! ${AI7.streak}연승`;
+        AI7.resultText.textContent = `완전 정복! ${AI7.streak}연승 | +${reward} Coin`;
       } else {
         AI7.difficulty = Math.min(100, oldDifficulty + 5);
-        AI7.resultText.textContent = `승리! ${AI7.streak}연승 | 3초 뒤 난이도 ${AI7.difficulty}`;
+        AI7.resultText.textContent = `승리! ${AI7.streak}연승 | +${reward} Coin | 3초 뒤 난이도 ${AI7.difficulty}`;
         AI7.nextRoundTimeout = setTimeout(() => {
           if (AI7.challengeMode === 9) startChallengeRound_AI7();
         }, 3000);
@@ -15045,7 +15001,7 @@ function finishAI7(result, reason) {
       AI7.resultText.textContent = `도전 종료! ${AI7.streak}연승 | ${reason}`;
     }
     if (won) {
-      coin += getStageReward(mode, 1);
+      coin += reward;
       localStorage.setItem("coin", String(coin));
       if (typeof updateCoin === "function") updateCoin();
     }
