@@ -78,4 +78,36 @@
   observer.observe(game, {childList: true, subtree: true, attributes: true, attributeFilter: ['class']});
   addEventListener('resize', scheduleFit);
   scheduleFit();
+  // Mobile item activation: reuse the currently active stage's A/S/D item shortcuts.
+  game.addEventListener('click', (e) => {
+    if (!mobile.matches || game.classList.contains('hidden')) return;
+    const slot = e.target.closest('.game-item-panel > *, .game-item-panel-inline > *');
+    if (!slot || slot.closest('.multi-enemy-side, .ai-enemy-side')) return;
+    const panel = slot.parentElement;
+    const index = Array.prototype.indexOf.call(panel.children, slot);
+    if (index < 0 || index > 2 || !slot.textContent.trim()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const key = ['a', 's', 'd'][index];
+    if (typeof document.onkeydown === 'function') {
+      document.onkeydown(new KeyboardEvent('keydown', { key, code: 'Key' + key.toUpperCase(), bubbles: true }));
+    } else {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key, code: 'Key' + key.toUpperCase(), bubbles: true }));
+    }
+  });
+  function labelItemSlots() {
+    if (!mobile.matches) return;
+    game.querySelectorAll('.game-item-panel, .game-item-panel-inline').forEach(panel => {
+      if (panel.closest('.multi-enemy-side, .ai-enemy-side')) return;
+      Array.from(panel.children).slice(0, 3).forEach((slot, i) => {
+        slot.setAttribute('role', 'button');
+        slot.setAttribute('aria-label', '아이템 ' + (i + 1) + ' 사용');
+        slot.style.cursor = 'pointer';
+        slot.style.touchAction = 'manipulation';
+      });
+    });
+  }
+  const itemObserver = new MutationObserver(labelItemSlots);
+  itemObserver.observe(game, {childList: true, subtree: true});
+  labelItemSlots();
 })();
