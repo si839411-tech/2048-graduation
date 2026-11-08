@@ -284,7 +284,7 @@ socket.on("roomError", message => {
     "4-1": 900, "4-2": 1200, "4-3": 1500, "4-4": 1900,
     "5-1": 2000, "5-2": 2800,
     "6-1": 3000, "6-2": 4000,
-    "7-1": 2400, "8-1": 3000, "9-1": 3000,
+    "7-1": 2400, "8-1": 2200, "9-1": 2400,
     "multi": 3000
   });
   const STAGE_REWARDS = Object.freeze({
@@ -13606,6 +13606,7 @@ function changedLine(a, b) {
 // 9-1: 난이도 1에서 시작, 승리 +5, 3초 후 다음 대전
 // ===============================
 function initGame_8_1() {
+  AI7.SIZE = 4;
   AI7.TARGET = getStageGoal(8, 1);
   clearTimeout(AI7.nextRoundTimeout);
   AI7.challengeMode = 8;
@@ -13615,6 +13616,7 @@ function initGame_8_1() {
 }
 
 function initGame_9_1() {
+  AI7.SIZE = 4;
   AI7.TARGET = getStageGoal(9, 1);
   clearTimeout(AI7.nextRoundTimeout);
   AI7.challengeMode = 9;
@@ -13624,6 +13626,7 @@ function initGame_9_1() {
 }
 
 function startChallengeRound_AI7() {
+  AI7.SIZE = 4; // 8-1 및 9-1 전 라운드 4×4 유지
   if (AI7.challengeMode) window.Achievements?.onDifficulty(AI7.challengeMode, AI7.difficulty);
   // 1~30 기존, 31~60 가중치, 61~100 제한시간 Expectimax.
   // 판단 작업은 Worker에서 처리하여 모바일 메인 스레드를 막지 않는다.
@@ -13698,6 +13701,7 @@ const AI7 = {
 };
 
 function initGame_7_1() {
+  AI7.SIZE = 5; // 7-1은 기존의 5×5를 유지
   AI7.TARGET = getStageGoal(7, 1);
   AI7.challengeMode = null;
   clearTimeout(AI7.nextRoundTimeout);
@@ -13778,8 +13782,12 @@ function getScoreBonus_AI7() {
 }
 
 function getSpawnValue_AI7() {
-  // 8-1/9-1에서는 구매한 타일 등장 강화 대신 기본 생성 확률 사용.
-  if (!shopEffectsEnabled_AI7()) return Math.random() < 0.9 ? 2 : 4;
+  // 8-1/9-1은 상점 강화 없이 4/8/16을 각 50%/30%/20%로 생성한다.
+  // AI Worker에도 아래와 동일한 확률을 전달한다.
+  if (!shopEffectsEnabled_AI7()) {
+    const r = Math.random();
+    return r < 0.5 ? 4 : (r < 0.8 ? 8 : 16);
+  }
   let value;
 
   if (localStorage.getItem("item8")) {
@@ -13929,7 +13937,7 @@ function createAI7Panel(titleText) {
   targetText.style.fontWeight = "bold";
 
   const boardDiv = document.createElement("div");
-  boardDiv.className = "board board-4";
+  boardDiv.className = AI7.SIZE === 4 ? "board board-4" : "board board-ai-5";
   boardDiv.style.gridTemplateColumns = `repeat(${AI7.SIZE}, 80px)`;
   boardDiv.style.gridTemplateRows = `repeat(${AI7.SIZE}, 80px)`;
 
@@ -14054,10 +14062,10 @@ function updateSlotUI_AI7() {
   }
 }
 
-// AI 난이도별 속도: 레벨 1=2000ms, 레벨 100=800ms (선형 변화).
+// 8-1/9-1: 레벨 1=1300ms, 레벨 100=600ms. 7-1은 기존 2000ms 유지.
 function getAIDelay_AI7(level) {
   const n = Math.max(1, Math.min(100, Number(level) || 1));
-  return Math.round(2000 - (n - 1) * 1200 / 99);
+  return Math.round(1300 - (n - 1) * 700 / 99);
 }
 
 function startAITimer_AI7() {
@@ -14118,8 +14126,11 @@ function rateSide_AI7(side) {
     }
   }
   const corner = maxTile > 0 && (b[0][0] === maxTile || b[0][n-1] === maxTile || b[n-1][0] === maxTile || b[n-1][n-1] === maxTile);
-  return empty * 65 + pairs * 28 + (corner ? 75 : 0) + Math.log2(Math.max(2,maxTile)) * 16
-    - rough * 7 + side.score * 0.35
+  // 4×4는 이동마다 2개 타일이 추가되므로 빈 칸을 더 높게 평가한다.
+  const emptyWeight = n === 4 ? 90 : 65;
+  const crowdPenalty = n === 4 ? Math.max(0, 3 - empty) * 90 : 0;
+  return empty * emptyWeight + pairs * 28 + (corner ? 75 : 0) + Math.log2(Math.max(2,maxTile)) * 16
+    - rough * 7 - crowdPenalty + side.score * 0.35
     - (side.locks ? side.locks.length : 0) * 10
     - (side.curseBombs ? side.curseBombs.length : 0) * 8;
 }
@@ -14173,7 +14184,7 @@ function aiMove_AI7() {
 
 function getSpawnDistribution_AI7() {
   // Expectimax도 실제 생성 규칙과 같은 분포로 예측해야 한다.
-  if (!shopEffectsEnabled_AI7()) return [[2,0.9],[4,0.1]];
+  if (!shopEffectsEnabled_AI7()) return [[4,0.5],[8,0.3],[16,0.2]];
   if (localStorage.getItem('item8')) return [[32,0.5],[64,0.3],[128,0.2]];
   if (localStorage.getItem('item7')) return [[16,0.5],[32,0.3],[64,0.2]];
   if (localStorage.getItem('item4')) return [[8,0.5],[16,0.3],[32,0.2]];

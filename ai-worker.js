@@ -131,7 +131,7 @@ function search(data) {
   nodes=0;
   maxNodes=12000;
   mergeBonus = Math.max(0,Number(data.mergeBonus)||0);
-  const spawnDist=data.spawn || [[2,0.9],[4,0.1]];
+  const spawnDist=data.spawn || [[4,0.5],[8,0.3],[16,0.2]];
   // Quick, available fallback even if the time budget is exceeded immediately.
   let best=candidates[0], bestScore=-Infinity;
   for(const candidate of candidates) {
