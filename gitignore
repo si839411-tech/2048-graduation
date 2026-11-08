@@ -1,0 +1,27 @@
+# Installed dependencies (managed by package-lock.json)
+node_modules/
+
+# Local environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Backups and local save files
+2048-save-*.json
+*.local.json
+
+# Logs and process artifacts
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Operating system / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Test coverage and cache
+coverage/
+.cache/
