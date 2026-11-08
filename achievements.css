@@ -1,4 +1,4 @@
-/* V14: 업적/꾸미기 UI. 기존 게임 레이아웃 크기와 위치는 유지한다. */
+/* V16: 업적은 독립 화면, 꾸미기는 기존 팝업. 기존 게임 레이아웃은 변경하지 않는다. */
 .achievement-overlay {
   position: fixed; inset: 0; z-index: 100000;
   display: flex; align-items: center; justify-content: center;
@@ -49,6 +49,96 @@
   box-shadow: 0 6px 22px rgba(0,0,0,.2); font-weight: bold; font-size: 14px; text-align: center;
   pointer-events: none;
 }
+/* 업적 전용 페이지: 메뉴 위에 대화상자로 겹치지 않는다. */
+.achievement-screen {
+  position: fixed; inset: 0; width: 100%; height: 100dvh; z-index: 9000;
+  box-sizing: border-box; display: flex; flex-direction: column;
+  align-items: center; background: #e8f5e9; color: #25452f;
+  font-family: system-ui, -apple-system, "Malgun Gothic", sans-serif;
+  overflow: hidden;
+}
+.achievement-screen-heading {
+  width: min(980px, calc(100% - 40px)); flex: 0 0 auto;
+  text-align: center; padding: 22px 0 12px;
+}
+.achievement-screen-eyebrow {
+  letter-spacing: .19em; font-size: 12px; font-weight: 700; color: #699474;
+}
+.achievement-screen-heading h1 {
+  font-size: clamp(30px, 4vw, 44px); margin: 3px 0 4px; color: #1b5e20;
+}
+.achievement-screen-heading p {
+  font-size: 14px; color: #527359; margin: 0 0 12px;
+}
+.achievement-screen-total-progress {
+  height: 7px; max-width: 380px; margin: 0 auto;
+  background: #c9dfce; border-radius: 99px; overflow: hidden;
+}
+.achievement-screen-total-progress > div {
+  height: 100%; width: 0; background: #43a568; border-radius: inherit;
+  transition: width .2s ease;
+}
+.achievement-screen-scroll {
+  flex: 1 1 auto; min-height: 0; width: 100%; overflow-y: auto;
+  overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  padding: 12px 20px 14px; box-sizing: border-box;
+}
+.achievement-screen-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(112px, auto));
+  grid-auto-flow: column; gap: 12px 18px;
+  max-width: 980px; margin: 0 auto;
+}
+.achievement-screen-grid > .achievement-card {
+  min-width: 0; min-height: 112px; margin: 0;
+  box-sizing: border-box; padding: 13px 16px;
+  display: flex; flex-direction: column; gap: 7px;
+  background: #fff; border: 1px solid #bdd9c4; border-left: 5px solid #8cb69a;
+  box-shadow: 0 3px 10px rgba(28, 84, 43, .065);
+}
+.achievement-screen-grid > .achievement-card.achieved {
+  background: #f1fff2; border-color: #80c98c; border-left-color: #2f9d57;
+}
+.achievement-screen-grid .achievement-card-top { flex-wrap: wrap; gap: 3px 10px; }
+.achievement-screen-grid .achievement-card-top strong { font-size: 15px; color: #204b30; }
+.achievement-screen-grid .achievement-card-status { color: #447858; font-size: 12px; }
+.achievement-screen-grid .achievement-card p { margin: 0; overflow-wrap: anywhere; }
+.achievement-screen-grid .achievement-card .achievement-rule { color: #526358; }
+.achievement-screen-grid .achievement-card .achievement-reward { margin-top: auto; }
+.achievement-screen-grid .achievement-progress-track { margin-top: 1px; }
+.achievement-screen-note {
+  max-width: 980px; margin: 12px auto 0; text-align: center;
+}
+.achievement-screen-footer {
+  width: 100%; flex: 0 0 auto; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: flex-start;
+  padding: 10px max(24px, calc((100vw - 980px)/2)) max(16px, env(safe-area-inset-bottom));
+  background: #e8f5e9;
+}
+.achievement-screen-back {
+  width: 138px; min-height: 48px; padding: 0 12px;
+  background: #f44336; color: #fff; border: 0; border-radius: 8px;
+  font-size: 18px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 3px 8px #0002;
+}
+.achievement-screen-back:hover { background: #e53935; }
+.achievement-screen-back:focus-visible { outline: 3px solid #205f3a; outline-offset: 3px; }
+@media (max-width: 650px) {
+  .achievement-screen-heading { width: calc(100% - 24px); padding: max(12px, env(safe-area-inset-top)) 0 8px; }
+  .achievement-screen-heading h1 { font-size: 28px; margin: 1px 0; }
+  .achievement-screen-heading p { font-size: 12px; margin-bottom: 7px; }
+  .achievement-screen-scroll { padding: 8px 9px; }
+  .achievement-screen-grid { gap: 8px; grid-template-rows: repeat(4, minmax(128px, auto)); }
+  .achievement-screen-grid > .achievement-card { padding: 10px 9px; min-height: 128px; gap: 6px; border-left-width: 3px; }
+  .achievement-screen-grid .achievement-card-top strong { font-size: 12px; }
+  .achievement-screen-grid .achievement-card-top span { font-size: 10px; white-space: normal; }
+  .achievement-screen-grid .achievement-card p { font-size: 11px; line-height: 1.35; }
+  .achievement-screen-grid .achievement-progress-track { height: 6px; }
+  .achievement-screen-note { font-size: 11px; text-align: left; }
+  .achievement-screen-footer { padding: 8px 12px max(10px, env(safe-area-inset-bottom)); }
+  .achievement-screen-back { width: 110px; min-height: 43px; font-size: 15px; }
+}
+
 /* 각 테마는 색상만 변경한다. 보드의 좌표·크기·터치 조작에는 영향을 주지 않는다. */
 body[data-achievement-theme="pastel"] { --skin-bg:#f3e7ed; --skin-tile:#f1baca; --skin-text:#643a51; --skin-menu:#7eaf9a; --skin-stage:#b28dcc; }
 body[data-achievement-theme="ocean"] { --skin-bg:#d8f1fb; --skin-tile:#82d3de; --skin-text:#12546d; --skin-menu:#278fb1; --skin-stage:#2376b3; }

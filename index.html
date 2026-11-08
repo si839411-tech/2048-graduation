@@ -759,6 +759,8 @@
 }
 
 </style>
+  <!-- 업적 전용 화면 및 꾸미기 스타일 -->
+  <link rel="stylesheet" href="achievements.css?v=16">
 </head>
 <body>
 
@@ -781,6 +783,25 @@
   <!-- 스테이지 -->
   <div class="stage-container hidden" id="stageContainer"></div>
 
+  <!-- 업적 (상점·옵션과 동일하게 타이틀과 분리된 독립 화면) -->
+  <section class="achievement-screen hidden" id="achievementContainer" aria-label="업적 화면">
+    <header class="achievement-screen-heading">
+      <span class="achievement-screen-eyebrow">ACHIEVEMENTS</span>
+      <h1>🏆 업적</h1>
+      <p id="achievementScreenSummary">달성한 업적 0 / 8</p>
+      <div class="achievement-screen-total-progress" aria-hidden="true">
+        <div id="achievementScreenTotalFill"></div>
+      </div>
+    </header>
+    <main class="achievement-screen-scroll">
+      <div class="achievement-screen-grid" id="achievementScreenGrid"></div>
+      <p class="achievement-note achievement-screen-note" id="achievementScreenNote">코인 사용액은 기록 기능 도입 이후 구매부터 누적됩니다. 한 번 달성한 업적은 유지됩니다.</p>
+    </main>
+    <footer class="achievement-screen-footer">
+      <button id="achievementScreenBack" class="achievement-screen-back" type="button">← 뒤로가기</button>
+    </footer>
+  </section>
+
   <!-- 상점 (독립!) -->
   <div class="shop-container hidden" id="shopContainer"></div>
 
@@ -792,7 +813,7 @@
   <script src="/socket.io/socket.io.js"></script>
 
   <!-- JS는 무조건 마지막 -->
-  <script src="achievements.js?v=14"></script>
+  <script src="achievements.js?v=16"></script>
   <script src="script.js?v=14"></script>
   <script src="mobile.js"></script>
   

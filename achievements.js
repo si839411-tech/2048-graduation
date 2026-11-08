@@ -1,4 +1,4 @@
-/* V14: 업적 8개 / 꾸미기 해금. 기존 게임 엔진과 별도로 관리한다. */
+/* V16: 독립 업적 화면 (좌 4개, 우 4개) + 기존 업적/꾸미기 기능 유지. */
 (function () {
   'use strict';
 
@@ -66,6 +66,8 @@
   }
   let state = load();
   let menuNode = null;
+  let achievementScreenNode = null;
+  let achievementBackFocus = null;
   let openDialogNode = null;
   let toastQueue = [];
   let toastActive = false;
@@ -133,6 +135,9 @@
     if (changed) ensureThemeButton();
     if (changed) save();
     if (openDialogNode) renderCurrentDialog();
+    if (achievementScreenNode && !achievementScreenNode.classList.contains('hidden')) {
+      renderAchievements(document.getElementById('achievementScreenGrid'));
+    }
   }
   function applyTheme() {
     if (state.theme !== 'classic' && !THEMES.some(theme => theme.id === state.theme &&
@@ -178,48 +183,70 @@
     return content;
   }
   function percent(p) { return Math.min(100, Math.round(p.value / p.max * 100)); }
-  function renderAchievements(content) {
-    content.innerHTML = '';
+  function renderAchievements(grid) {
+    if (!grid) return;
+    grid.replaceChildren();
     const count = ACHIEVEMENTS.filter(a => isComplete(a.id)).length;
-    const summary = document.createElement('p');
-    summary.className = 'achievement-summary';
-    summary.textContent = `달성한 업적 ${count} / ${ACHIEVEMENTS.length} · 모든 보상은 꾸미기 전용`;
-    content.appendChild(summary);
+    const summary = document.getElementById('achievementScreenSummary');
+    if (summary) summary.textContent = `달성한 업적 ${count} / ${ACHIEVEMENTS.length} · 업적 달성 시 테마 해금`;
+    const overall = document.getElementById('achievementScreenTotalFill');
+    if (overall) overall.style.width = `${count / ACHIEVEMENTS.length * 100}%`;
+
+    // DOM 순서 1~4가 왼쪽 열, 5~8이 오른쪽 열에 배치된다.
+    // CSS grid-auto-flow: column 및 4행을 사용한다.
     ACHIEVEMENTS.forEach((achievement, i) => {
       const p = progress(achievement.id);
       const done = isComplete(achievement.id);
       const theme = THEMES.find(t => t.id === achievement.theme);
       const card = document.createElement('article');
       card.className = `achievement-card${done ? ' achieved' : ''}`;
+      card.setAttribute('aria-label', `${i + 1}번 ${achievement.name}, ${done ? '달성' : '미달성'}`);
       const top = document.createElement('div');
       top.className = 'achievement-card-top';
       const label = document.createElement('strong');
       label.textContent = `${done ? '🏆' : '🔒'} ${i + 1}. ${achievement.name}`;
       const badge = document.createElement('span');
-      badge.textContent = done ? '달성' : `${p.value.toLocaleString()} / ${p.max.toLocaleString()}`;
+      badge.className = 'achievement-card-status';
+      badge.textContent = done ? '달성 완료' : `${p.value.toLocaleString()} / ${p.max.toLocaleString()}`;
       top.append(label, badge);
       const rule = document.createElement('p');
+      rule.className = 'achievement-rule';
       rule.textContent = achievement.rule;
       const reward = document.createElement('p');
       reward.className = 'achievement-reward';
-      reward.textContent = `보상: ${theme.name} 테마 ${done ? '(사용 가능)' : '(잠김)'}`;
+      reward.textContent = `🎨 ${theme.name} 테마 ${done ? '해금' : '잠김'}`;
       const bar = document.createElement('div');
       bar.className = 'achievement-progress-track';
+      bar.setAttribute('role', 'progressbar');
+      bar.setAttribute('aria-valuenow', String(p.value));
+      bar.setAttribute('aria-valuemin', '0');
+      bar.setAttribute('aria-valuemax', String(p.max));
       const fill = document.createElement('div');
       fill.className = 'achievement-progress-fill';
       fill.style.width = percent(p) + '%';
       bar.appendChild(fill);
       card.append(top, rule, reward, bar);
-      content.appendChild(card);
+      grid.appendChild(card);
     });
-    const note = document.createElement('p');
-    note.className = 'achievement-note';
-    note.textContent = '코인 사용액은 이번 업데이트 이후 구매부터 누적됩니다. 업적을 한 번 달성하면 이후 코인을 쓰거나 상점을 초기화해도 유지됩니다.';
-    content.appendChild(note);
+  }
+  function closeAchievements() {
+    if (!achievementScreenNode || achievementScreenNode.classList.contains('hidden')) return;
+    achievementScreenNode.classList.add('hidden');
+    if (menuNode) menuNode.classList.remove('hidden');
+    if (achievementBackFocus && achievementBackFocus.isConnected) achievementBackFocus.focus();
+    achievementBackFocus = null;
   }
   function showAchievements() {
-    const content = makeDialog('업적');
-    renderAchievements(content);
+    if (!achievementScreenNode) return;
+    // 진입할 때 업적 상태를 최신 데이터로 갱신한다.
+    check(true);
+    achievementBackFocus = document.activeElement;
+    if (menuNode) menuNode.classList.add('hidden');
+    renderAchievements(document.getElementById('achievementScreenGrid'));
+    achievementScreenNode.classList.remove('hidden');
+    const scroll = achievementScreenNode.querySelector('.achievement-screen-scroll');
+    if (scroll) scroll.scrollTop = 0;
+    document.getElementById('achievementScreenBack')?.focus();
   }
   function renderThemes(content) {
     content.innerHTML = '';
@@ -278,12 +305,19 @@
     else renderThemes(openDialogNode.content);
   }
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && openDialogNode) { closeDialog(); event.stopPropagation(); }
+    if (event.key !== 'Escape') return;
+    if (openDialogNode) { closeDialog(); event.stopPropagation(); }
+    else if (achievementScreenNode && !achievementScreenNode.classList.contains('hidden')) {
+      closeAchievements();
+      event.stopPropagation();
+    }
   });
 
   window.Achievements = {
     init(menu) {
       menuNode = menu;
+      achievementScreenNode = document.getElementById('achievementContainer');
+      document.getElementById('achievementScreenBack')?.addEventListener('click', closeAchievements);
       // 초기 로드에서 이미 충족한 기록은 조용히 복구한다.
       check(true);
       const button = document.createElement('div');
