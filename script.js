@@ -728,6 +728,13 @@ function showSubStages(stageNum) {
   };
 
   optionContainer.appendChild(backBtn);
+
+  // V19: 서명 백업/복원 컨트롤 (기존 옵션 동작 보존)
+  const backupPanel = document.createElement("section");
+  backupPanel.className = "backup-panel";
+  if (window.GameBackup?.mount) window.GameBackup.mount(backupPanel);
+  else backupPanel.textContent = "백업 기능을 불러오지 못했습니다. 페이지를 새로고침해 주세요.";
+  optionContainer.appendChild(backupPanel);
 }
 
 

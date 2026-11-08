@@ -6,6 +6,10 @@ const { Server } = require("socket.io");
 const io = new Server(http);
 const playersInMulti = new Set();
 
+// V19: 로그인/DB 없이 세이브 파일의 HMAC 서명 및 검증
+app.use(express.json({limit: "64kb"}));
+require("./backup-api").attachBackupRoutes(app);
+
 // 현재 폴더의 html, js, css 파일을 서버에서 보여줌
 app.use(express.static(__dirname));
 

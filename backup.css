@@ -1,0 +1,76 @@
+/* V19: PC·모바일 옵션 화면의 서명 백업 컨트롤 */
+#optionContainer:not(.hidden) {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: clamp(10px, 3vh, 24px) !important;
+  box-sizing: border-box !important;
+  padding: max(22px, env(safe-area-inset-top)) 16px max(14px,env(safe-area-inset-bottom)) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+#optionContainer:not(.hidden) > div:nth-child(1),
+#optionContainer:not(.hidden) > div:nth-child(2),
+#optionContainer:not(.hidden) > div:nth-child(3) {
+  position: relative !important;
+  inset: auto !important;
+  left: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  flex-shrink: 0;
+}
+#optionContainer:not(.hidden) > div:nth-child(1) {
+  order: 1;
+  font-size: clamp(30px, 5vw, 46px) !important;
+  margin: 0 auto !important;
+}
+#optionContainer:not(.hidden) > div:nth-child(2) {
+  order: 2;
+  width: min(360px,100%) !important;
+  height: 58px !important;
+  min-height: 58px;
+  font-size: clamp(16px,3vw,24px) !important;
+}
+#optionContainer:not(.hidden) > div:nth-child(3) {
+  order: 4;
+  margin-top: auto !important;
+  margin-right: auto !important;
+  width: 118px !important;
+  min-height: 50px;
+  height: 50px !important;
+  font-size: 19px !important;
+}
+#optionContainer:not(.hidden) .backup-panel {
+  order: 3;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: min(440px,100%);
+  padding: clamp(12px,2.2vw,20px);
+  border-radius: 14px;
+  border: 1px solid var(--ui-border,#b6d4be);
+  background: var(--ui-surface,#f7fff8);
+  color: var(--ui-text,#244a30);
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  font-family: system-ui, -apple-system, "Malgun Gothic", sans-serif;
+}
+.backup-panel h2 {font-size: 20px; margin:0 0 6px; color:inherit;}
+.backup-panel p {margin:0; font-size:13px; line-height:1.45; color:var(--ui-muted,#4c6953);}
+.backup-controls {display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:10px; margin:14px 0 10px;}
+.backup-controls button {
+  cursor:pointer; min-height:52px; min-width:0; padding:9px 7px;
+  border:0; border-radius:9px; font-size:clamp(13px,2.4vw,16px);
+  font-weight:700; color:var(--ui-accent-ink,#fff); background:var(--ui-accent,#328a51);
+  overflow-wrap:anywhere;
+}
+.backup-controls button:disabled {opacity:.55; cursor:wait;}
+.backup-controls button:focus-visible {outline:3px solid currentColor; outline-offset:2px;}
+.backup-panel .backup-status {min-height:36px; font-size:12px; overflow-wrap:anywhere;}
+.backup-panel .backup-file-input {display:none;}
+@media(max-width:440px) {
+  #optionContainer:not(.hidden) { gap:10px !important; padding-top:16px !important; }
+  #optionContainer:not(.hidden) > div:nth-child(2) {height:52px !important; min-height:52px;}
+  .backup-controls button {min-height:48px;}
+}
