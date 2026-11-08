@@ -1,0 +1,78 @@
+/* V14: 업적/꾸미기 UI. 기존 게임 레이아웃 크기와 위치는 유지한다. */
+.achievement-overlay {
+  position: fixed; inset: 0; z-index: 100000;
+  display: flex; align-items: center; justify-content: center;
+  box-sizing: border-box;
+  padding: 18px;
+  background: rgba(11, 20, 25, .68);
+}
+.achievement-panel {
+  box-sizing: border-box;
+  width: min(720px, 100%);
+  max-height: min(88dvh, 880px);
+  display: flex; flex-direction: column; overflow: hidden;
+  border-radius: 18px; background: #fcfcf8; color: #25332c;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.achievement-header {
+  display: flex; flex: 0 0 auto; justify-content: space-between; align-items: center;
+  gap: 8px; padding: 16px 20px; border-bottom: 1px solid #e1e8de;
+}
+.achievement-header h2 { margin: 0; font-size: 22px; color: #1c5635; }
+.achievement-close { cursor: pointer; border: 0; border-radius: 8px; padding: 10px 14px; background: #e8ede9; color: #243b2c; font-weight: 700; }
+.achievement-content { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 20px 24px; }
+.achievement-summary { margin: 4px 0 16px; color: #445b4c; line-height: 1.5; }
+.achievement-card { padding: 13px 14px; border: 1px solid #d6ded8; border-radius: 12px; margin: 0 0 11px; background: #f8faf7; }
+.achievement-card.achieved { background: #f1fbf0; border-color: #a6d5a5; }
+.achievement-card-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.achievement-card-top strong { font-size: 15px; }
+.achievement-card-top span { font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; color: #347456; }
+.achievement-card p { font-size: 13px; color: #506255; margin: 5px 0 0; line-height: 1.4; }
+.achievement-card p.achievement-reward { color: #33775c; font-weight: 600; }
+.achievement-progress-track { height: 7px; border-radius: 12px; background: #dfe8de; overflow: hidden; margin-top: 10px; }
+.achievement-progress-fill { height: 100%; border-radius: 12px; background: #37a16e; transition: width .2s; }
+.achievement-note { color: #63766a; font-size: 12px; line-height: 1.5; }
+.achievement-theme-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+.achievement-theme-option { display: flex; flex-direction: column; gap: 6px; padding: 9px; text-align: left; border: 2px solid #d5e1d9; border-radius: 12px; background: #fff; color: #2a4132; cursor: pointer; min-width: 0; }
+.achievement-theme-option.selected { border-color: #18884c; box-shadow: inset 0 0 0 1px #18884c; }
+.achievement-theme-option:disabled { opacity: .65; cursor: not-allowed; filter: grayscale(.35); }
+.achievement-theme-option strong { font-size: 15px; }
+.achievement-theme-option small { font-size: 11px; color: #536458; line-height: 1.35; }
+.achievement-theme-sample { border-radius: 8px; padding: 13px; width: 100%; box-sizing: border-box; }
+.achievement-sample-tiles { display: grid; grid-template-columns: repeat(2,1fr); gap: 5px; max-width: 100px; margin: auto; }
+.achievement-sample-tiles span { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 5px; font-size: 14px; font-weight: 700; }
+.achievement-toast {
+  position: fixed; left: 50%; top: max(18px, env(safe-area-inset-top)); transform: translateX(-50%);
+  z-index: 100001; padding: 13px 18px; width: max-content; max-width: calc(100vw - 32px);
+  box-sizing: border-box; border-radius: 10px; background: #153f28; color: #fff;
+  box-shadow: 0 6px 22px rgba(0,0,0,.2); font-weight: bold; font-size: 14px; text-align: center;
+  pointer-events: none;
+}
+/* 각 테마는 색상만 변경한다. 보드의 좌표·크기·터치 조작에는 영향을 주지 않는다. */
+body[data-achievement-theme="pastel"] { --skin-bg:#f3e7ed; --skin-tile:#f1baca; --skin-text:#643a51; --skin-menu:#7eaf9a; --skin-stage:#b28dcc; }
+body[data-achievement-theme="ocean"] { --skin-bg:#d8f1fb; --skin-tile:#82d3de; --skin-text:#12546d; --skin-menu:#278fb1; --skin-stage:#2376b3; }
+body[data-achievement-theme="neon"] { --skin-bg:#24203f; --skin-tile:#6750a4; --skin-text:#fff6ff; --skin-menu:#6049aa; --skin-stage:#1a9eaf; }
+body[data-achievement-theme="ember"] { --skin-bg:#fff0e6; --skin-tile:#f5ad76; --skin-text:#803c1c; --skin-menu:#d66d49; --skin-stage:#d48834; }
+body[data-achievement-theme="cyber"] { --skin-bg:#151b2b; --skin-tile:#28536c; --skin-text:#e6fffd; --skin-menu:#236c79; --skin-stage:#5150a7; }
+body[data-achievement-theme="diamond"] { --skin-bg:#eff9ff; --skin-tile:#bbebf4; --skin-text:#1f5775; --skin-menu:#6ba3c8; --skin-stage:#6693ce; }
+body[data-achievement-theme="gold"] { --skin-bg:#29231d; --skin-tile:#b18c39; --skin-text:#fff6d9; --skin-menu:#89672d; --skin-stage:#a17a33; }
+body[data-achievement-theme="rainbow"] { --skin-bg:#fff0f8; --skin-tile:#e1b5ee; --skin-text:#67306b; --skin-menu:#b362ba; --skin-stage:#629ad1; }
+body[data-achievement-theme] { background: var(--skin-bg) !important; }
+body[data-achievement-theme] #gameContainer { background: var(--skin-bg) !important; }
+body[data-achievement-theme] .cell { background: var(--skin-tile) !important; color: var(--skin-text) !important; }
+body[data-achievement-theme] .cell:nth-child(4n + 2) { filter: brightness(1.075); }
+body[data-achievement-theme] .cell:nth-child(4n + 3) { filter: brightness(.96); }
+body[data-achievement-theme] .block { background: var(--skin-menu) !important; color: #fff !important; }
+body[data-achievement-theme] .stage:not(.stage-nine-locked):not([style*="not-allowed"]) { background: var(--skin-stage) !important; color: #fff !important; }
+body[data-achievement-theme] .score,
+body[data-achievement-theme] .coin-display { color: var(--skin-text) !important; }
+/* 업적 창은 테마 색상에 영향을 받지 않아 항상 읽기 쉽게 유지한다. */
+@media (max-width: 650px) {
+  .achievement-overlay { padding: 8px; align-items: center; }
+  .achievement-panel { max-height: calc(100dvh - 16px); border-radius: 12px; }
+  .achievement-header { padding: 12px 14px; }
+  .achievement-content { padding: 12px 14px 18px; }
+  .achievement-theme-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+  .achievement-theme-sample { padding: 8px; }
+}
