@@ -10215,7 +10215,8 @@ function draw_5_1(boardDiv) {
 
       if (holeHere) {  
         cell.textContent = "";
-        cell.style.background = "#81d4fa";
+        cell.classList.add("cell-wall");
+        cell.setAttribute("aria-label", "이동할 수 없는 벽");
       } else if (shieldHere) {
         cell.textContent = "🛡️";
       } else if (lockHere) {
@@ -11231,7 +11232,8 @@ function draw_5_2(boardDiv) {
 
       if (holeHere) {  
         cell.textContent = "";
-        cell.style.background = "#81d4fa";
+        cell.classList.add("cell-wall");
+        cell.setAttribute("aria-label", "이동할 수 없는 벽");
       } else if (shieldHere) {
         cell.textContent = "🛡️";
       } else if (lockHere) {
@@ -12273,7 +12275,8 @@ function draw_6_1(boardDiv) {
 
       if (holeHere) {
         cell.textContent = "";
-        cell.style.background = "#81d4fa";
+        cell.classList.add("cell-wall");
+        cell.setAttribute("aria-label", "이동할 수 없는 벽");
       } else if (shieldHere) {
         cell.textContent = "🛡️";
       } else if (lockHere) {
@@ -13321,7 +13324,8 @@ function draw_6_2(boardDiv) {
 
       if (holeHere) {
         cell.textContent = "";
-        cell.style.background = "#81d4fa";
+        cell.classList.add("cell-wall");
+        cell.setAttribute("aria-label", "이동할 수 없는 벽");
       } else if (shieldHere) {
         cell.textContent = "🛡️";
       } else if (lockHere) {
