@@ -13750,7 +13750,14 @@ applyStartItems_AI7(AI7.ai);
   startAITimer_AI7();
 }
 
+// 8-1 / 9-1은 AI 실력 대전이므로 상점에서 구매한 강화가
+// 플레이어와 AI 어느 쪽에도 적용되지 않는다. 7-1은 기존 규칙 유지.
+function shopEffectsEnabled_AI7() {
+  return AI7.challengeMode !== 8 && AI7.challengeMode !== 9;
+}
+
 function getScoreBonus_AI7() {
+  if (!shopEffectsEnabled_AI7()) return 0;
   const bonus1 = Number(localStorage.getItem("item1Count")) || 0;
   const bonus5 = Number(localStorage.getItem("item5Count")) || 0;
   const bonus9 = Number(localStorage.getItem("item9Count")) || 0;
@@ -13760,6 +13767,8 @@ function getScoreBonus_AI7() {
 }
 
 function getSpawnValue_AI7() {
+  // 8-1/9-1에서는 구매한 타일 등장 강화 대신 기본 생성 확률 사용.
+  if (!shopEffectsEnabled_AI7()) return Math.random() < 0.9 ? 2 : 4;
   let value;
 
   if (localStorage.getItem("item8")) {
@@ -13790,7 +13799,9 @@ function getSpawnValue_AI7() {
 }
 
 function applyStartItems_AI7(side) {
-  // item16은 일부러 적용 안 함. 타이머는 무조건 10초.
+  // 8-1/9-1에서는 상점의 시작 지급(아이템11/12/15)을 끈다.
+  // 이동 중 얻는 폭탄·레이저·블록은 이 함수와 무관하므로 유지된다.
+  if (!shopEffectsEnabled_AI7()) return;
 
   if (localStorage.getItem("item11")) {
     useItemImmediately_AI7(side, "bomb");
@@ -14150,6 +14161,8 @@ function aiMove_AI7() {
 }
 
 function getSpawnDistribution_AI7() {
+  // Expectimax도 실제 생성 규칙과 같은 분포로 예측해야 한다.
+  if (!shopEffectsEnabled_AI7()) return [[2,0.9],[4,0.1]];
   if (localStorage.getItem('item8')) return [[32,0.5],[64,0.3],[128,0.2]];
   if (localStorage.getItem('item7')) return [[16,0.5],[32,0.3],[64,0.2]];
   if (localStorage.getItem('item4')) return [[8,0.5],[16,0.3],[32,0.2]];
@@ -14961,7 +14974,8 @@ else cell.textContent = side.board[i][j] || "";
 }
 
 function getMaxTimer_AI7(side) {
-  if (side === AI7.player) {
+  // 8-1/9-1의 플레이어와 AI 모두 10초 기본 타이머를 사용한다.
+  if (side === AI7.player && shopEffectsEnabled_AI7()) {
     const item16Count = Number(localStorage.getItem("item16Count")) || 0;
     return 10 + item16Count * 0.1;
   }
