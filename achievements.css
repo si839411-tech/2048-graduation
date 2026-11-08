@@ -157,7 +157,7 @@ body[data-achievement-theme] .block { background: var(--skin-menu) !important; c
 body[data-achievement-theme] .stage:not(.stage-nine-locked):not([style*="not-allowed"]) { background: var(--skin-stage) !important; color: #fff !important; }
 body[data-achievement-theme] .score,
 body[data-achievement-theme] .coin-display { color: var(--skin-text) !important; }
-/* 업적 창은 테마 색상에 영향을 받지 않아 항상 읽기 쉽게 유지한다. */
+/* V17: 옵션·업적·꾸미기에도 현재 테마를 적용하되, 가독성을 위한 UI 색상은 별도로 정의한다. */
 @media (max-width: 650px) {
   .achievement-overlay { padding: 8px; align-items: center; }
   .achievement-panel { max-height: calc(100dvh - 16px); border-radius: 12px; }
@@ -165,4 +165,127 @@ body[data-achievement-theme] .coin-display { color: var(--skin-text) !important;
   .achievement-content { padding: 12px 14px 18px; }
   .achievement-theme-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
   .achievement-theme-sample { padding: 8px; }
+}
+
+
+/* V17: UI 화면 테마 팔레트. 레이아웃/터치 동작/상태는 기존 그대로 유지. */
+body[data-achievement-theme="pastel"] {
+  --ui-bg: #f3e7ed; --ui-surface: #fff9fd; --ui-surface-done: #ffeaf3;
+  --ui-text: #643a51; --ui-muted: #75556a; --ui-border: #d4b6c7;
+  --ui-accent: #76516b; --ui-accent-ink: #fff; --ui-track: #e5cbd9;
+}
+body[data-achievement-theme="ocean"] {
+  --ui-bg: #d8f1fb; --ui-surface: #f6fcff; --ui-surface-done: #e3f8fd;
+  --ui-text: #12546d; --ui-muted: #426b7e; --ui-border: #a1cede;
+  --ui-accent: #126b8a; --ui-accent-ink: #fff; --ui-track: #b6dce9;
+}
+body[data-achievement-theme="neon"] {
+  --ui-bg: #24203f; --ui-surface: #342d55; --ui-surface-done: #403365;
+  --ui-text: #fff6ff; --ui-muted: #dcd2ef; --ui-border: #6e5b99;
+  --ui-accent: #5943af; --ui-accent-ink: #fff; --ui-track: #51456b;
+}
+body[data-achievement-theme="ember"] {
+  --ui-bg: #fff0e6; --ui-surface: #fffaf5; --ui-surface-done: #ffe9d9;
+  --ui-text: #803c1c; --ui-muted: #875c45; --ui-border: #e7c1a9;
+  --ui-accent: #a64e31; --ui-accent-ink: #fff; --ui-track: #f0ceba;
+}
+body[data-achievement-theme="cyber"] {
+  --ui-bg: #151b2b; --ui-surface: #242f43; --ui-surface-done: #2a3e52;
+  --ui-text: #e6fffd; --ui-muted: #c0dedf; --ui-border: #446576;
+  --ui-accent: #0e7789; --ui-accent-ink: #fff; --ui-track: #344a61;
+}
+body[data-achievement-theme="diamond"] {
+  --ui-bg: #eff9ff; --ui-surface: #ffffff; --ui-surface-done: #e0f6fe;
+  --ui-text: #1f5775; --ui-muted: #547184; --ui-border: #add6e9;
+  --ui-accent: #376e9c; --ui-accent-ink: #fff; --ui-track: #c6e1ef;
+}
+body[data-achievement-theme="gold"] {
+  --ui-bg: #29231d; --ui-surface: #3b3127; --ui-surface-done: #4b3c29;
+  --ui-text: #fff6d9; --ui-muted: #e0cda8; --ui-border: #837044;
+  --ui-accent: #926c1e; --ui-accent-ink: #fff; --ui-track: #645234;
+}
+body[data-achievement-theme="rainbow"] {
+  --ui-bg: #fff0f8; --ui-surface: #fffbff; --ui-surface-done: #f6e4fb;
+  --ui-text: #67306b; --ui-muted: #805485; --ui-border: #d9b9df;
+  --ui-accent: #82418d; --ui-accent-ink: #fff; --ui-track: #ead2ec;
+}
+
+/* 옵션: 기존 JS 인라인 배경색/글자색보다 테마 변수를 우선 적용. */
+body[data-achievement-theme] #optionContainer {
+  background: var(--ui-bg) !important;
+  color: var(--ui-text) !important;
+}
+body[data-achievement-theme] #optionContainer > div:nth-child(1) {
+  color: var(--ui-text) !important;
+}
+body[data-achievement-theme] #optionContainer > div:nth-child(2) {
+  background: var(--ui-accent) !important;
+  color: var(--ui-accent-ink) !important;
+  border: 1px solid var(--ui-border);
+}
+
+/* 업적 전용 화면: 배경, 카드, 진행도, 제목 등 한꺼번에 적용. */
+body[data-achievement-theme] .achievement-screen,
+body[data-achievement-theme] .achievement-screen-footer {
+  background: var(--ui-bg);
+  color: var(--ui-text);
+}
+body[data-achievement-theme] .achievement-screen-eyebrow,
+body[data-achievement-theme] .achievement-screen-heading h1,
+body[data-achievement-theme] .achievement-screen-heading p,
+body[data-achievement-theme] .achievement-screen-note {
+  color: var(--ui-text);
+}
+body[data-achievement-theme] .achievement-screen-total-progress,
+body[data-achievement-theme] .achievement-progress-track {
+  background: var(--ui-track);
+}
+body[data-achievement-theme] .achievement-screen-total-progress > div,
+body[data-achievement-theme] .achievement-progress-fill {
+  background: var(--ui-accent);
+}
+body[data-achievement-theme] .achievement-screen-grid > .achievement-card {
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  border-color: var(--ui-border);
+  border-left-color: var(--ui-accent);
+}
+body[data-achievement-theme] .achievement-screen-grid > .achievement-card.achieved {
+  background: var(--ui-surface-done);
+  border-color: var(--ui-accent);
+}
+body[data-achievement-theme] .achievement-screen-grid .achievement-card-top strong,
+body[data-achievement-theme] .achievement-screen-grid .achievement-card-status,
+body[data-achievement-theme] .achievement-screen-grid .achievement-card .achievement-rule,
+body[data-achievement-theme] .achievement-screen-grid .achievement-card .achievement-reward {
+  color: var(--ui-text);
+}
+
+/* 꾸미기 창 역시 같은 팔레트로 보여 주되, 개별 테마 미리보기 색은 보존. */
+body[data-achievement-theme] .achievement-panel {
+  background: var(--ui-surface);
+  color: var(--ui-text);
+}
+body[data-achievement-theme] .achievement-header {
+  border-bottom-color: var(--ui-border);
+}
+body[data-achievement-theme] .achievement-header h2,
+body[data-achievement-theme] .achievement-summary {
+  color: var(--ui-text);
+}
+body[data-achievement-theme] .achievement-close {
+  background: var(--ui-accent);
+  color: var(--ui-accent-ink);
+}
+body[data-achievement-theme] .achievement-theme-option {
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  border-color: var(--ui-border);
+}
+body[data-achievement-theme] .achievement-theme-option.selected {
+  border-color: var(--ui-accent);
+  box-shadow: inset 0 0 0 1px var(--ui-accent);
+}
+body[data-achievement-theme] .achievement-theme-option small {
+  color: var(--ui-muted);
 }
