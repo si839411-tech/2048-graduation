@@ -10,8 +10,16 @@ const playersInMulti = new Set();
 app.use(express.json({limit: "64kb"}));
 require("./backup-api").attachBackupRoutes(app);
 
-// 현재 폴더의 html, js, css 파일을 서버에서 보여줌
-app.use(express.static(__dirname));
+// 클라이언트에 필요한 자산만 공개한다. 서버 코드/설정/백업 API 구현은 노출하지 않는다.
+const path = require("node:path");
+const publicFiles = [
+  "index.html", "script.js", "game.js", "mobile.js", "ai-worker.js",
+  "achievements.js", "achievements.css", "backup.js", "backup.css"
+];
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
+for (const filename of publicFiles) {
+  app.get("/" + filename, (req, res) => res.sendFile(path.join(__dirname, filename)));
+}
 
 // 접속 중인 ID 저장
 const usedIds = new Set();

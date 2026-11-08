@@ -236,11 +236,15 @@ function renderRoomList(rooms) {
     const div = document.createElement("div");
     div.className = "room";
 
-    div.innerHTML = `
-      <strong>${room.title}</strong><br>
-      방장: ${room.hostName}<br>
-      상태: ${room.status === "waiting" ? "대기중" : "게임중"}
-    `;
+    // 방 제목/방장 ID는 다른 사용자로부터 전달받은 값이므로 HTML로 해석하지 않는다.
+    const title = document.createElement("strong");
+    title.textContent = String(room.title ?? "");
+    const host = document.createElement("span");
+    host.textContent = "방장: " + String(room.hostName ?? "");
+    const status = document.createElement("span");
+    status.textContent = "상태: " + (room.status === "waiting" ? "대기중" : "게임중");
+    div.append(title, document.createElement("br"), host,
+      document.createElement("br"), status);
 
     div.onclick = () => {
       socket.emit("joinRoomById", room.roomId);
