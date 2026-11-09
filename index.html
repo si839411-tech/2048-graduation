@@ -795,10 +795,10 @@
 #gameContainer .boss-mobile-status {
   box-sizing: border-box;
   padding: 9px 14px;
-  border: 1px solid rgba(255, 208, 151, .35);
+  border: 1px solid rgba(92, 140, 86, .28);
   border-radius: 999px;
-  background: rgba(22, 10, 10, .55);
-  color: #fff5dd;
+  background: rgba(234, 245, 234, .92);
+  color: #2f6236;
   font-size: clamp(12px, 1.6vw, 15px);
   font-weight: 800;
   text-align: center;
@@ -808,13 +808,13 @@
 }
 #gameContainer .boss-mobile-status { display: none; }
 @keyframes bossRagePulse {
-  0%,100% { box-shadow: 0 0 0 2px rgba(255,88,67,.32), 0 14px 34px rgba(0,0,0,.30); }
-  50% { box-shadow: 0 0 0 5px rgba(255,90,45,.8), 0 18px 45px rgba(232,42,29,.25); }
+  0%,100% { box-shadow: 0 0 0 2px rgba(156,186,102,.28), 0 10px 24px rgba(0,0,0,.12); }
+  50% { box-shadow: 0 0 0 4px rgba(184, 155, 84, .40), 0 12px 28px rgba(0,0,0,.14); }
 }
 #gameContainer .boss-rage-active,
 #gameContainer .boss-mobile-rage { animation: bossRagePulse .58s ease-in-out infinite; }
-#gameContainer .boss-analysis-active { box-shadow: 0 0 0 3px rgba(139,178,255,.65), 0 16px 38px rgba(0,0,0,.34) !important; }
-#gameContainer .boss-charge-active { box-shadow: 0 0 0 3px rgba(255,206,101,.75), 0 16px 38px rgba(0,0,0,.34) !important; }
+#gameContainer .boss-analysis-active { box-shadow: 0 0 0 3px rgba(114, 152, 96, .36), 0 10px 24px rgba(0,0,0,.12) !important; }
+#gameContainer .boss-charge-active { box-shadow: 0 0 0 3px rgba(182, 161, 97, .45), 0 10px 24px rgba(0,0,0,.12) !important; }
 @media (max-width:700px) {
   #gameContainer .boss-mobile-status { display: block !important; width: min(100%, 330px); margin: 2px auto 7px !important; }
   #gameContainer .boss-stage-7 .board.board-ai-5 {

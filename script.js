@@ -13919,9 +13919,9 @@ function createAI7Layout() {
   screen.style.padding = isBossStage ? "20px 18px 80px" : "0";
   screen.style.gap = isBossStage ? "18px" : "0";
   if (isBossStage) {
-    screen.style.background = "radial-gradient(circle at top, #2c1d1d 0%, #141414 48%, #090909 100%)";
+    screen.style.background = "linear-gradient(180deg, #edf7ee 0%, #e4f1e5 100%)";
     screen.style.borderRadius = "18px";
-    screen.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,0.06)";
+    screen.style.boxShadow = "inset 0 0 0 1px rgba(71, 124, 77, 0.10)";
   }
 
   if (isBossStage) {
@@ -13934,26 +13934,26 @@ function createAI7Layout() {
     intro.style.gap = "8px";
     intro.style.padding = "16px 18px";
     intro.style.borderRadius = "18px";
-    intro.style.background = "linear-gradient(135deg, rgba(122,18,18,0.92), rgba(51,8,8,0.96))";
-    intro.style.boxShadow = "0 18px 30px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,215,140,0.25)";
+    intro.style.background = "linear-gradient(135deg, rgba(209, 233, 210, 0.98), rgba(191, 220, 192, 0.98))";
+    intro.style.boxShadow = "0 10px 22px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(76, 138, 85, 0.18)";
 
     const overline = document.createElement("div");
-    overline.textContent = "FINAL BOSS STAGE";
-    overline.style.color = "#ffd98b";
+    overline.textContent = "BOSS STAGE";
+    overline.style.color = "#4d7a51";
     overline.style.fontWeight = "800";
     overline.style.letterSpacing = "0.18em";
     overline.style.fontSize = "clamp(11px, 2vw, 14px)";
 
     const title = document.createElement("div");
-    title.textContent = "7-1 · BOSS RUSH";
-    title.style.color = "#fff7e0";
+    title.textContent = "7-1 · Boss Challenge";
+    title.style.color = "#225a2a";
     title.style.fontWeight = "900";
     title.style.fontSize = "clamp(24px, 4vw, 38px)";
     title.style.textAlign = "center";
 
     const subtitle = document.createElement("div");
     subtitle.textContent = "강화한 아이템으로 보스 AI를 돌파하세요";
-    subtitle.style.color = "rgba(255,245,224,0.88)";
+    subtitle.style.color = "rgba(36, 84, 43, 0.86)";
     subtitle.style.fontSize = "clamp(13px, 2.1vw, 16px)";
     subtitle.style.textAlign = "center";
 
@@ -13972,9 +13972,9 @@ function createAI7Layout() {
       badge.textContent = label;
       badge.style.padding = "8px 12px";
       badge.style.borderRadius = "999px";
-      badge.style.background = "rgba(255,255,255,0.1)";
-      badge.style.border = "1px solid rgba(255,217,139,0.25)";
-      badge.style.color = "#fff6e1";
+      badge.style.background = "rgba(255,255,255,0.72)";
+      badge.style.border = "1px solid rgba(76, 138, 85, 0.22)";
+      badge.style.color = "#2e6036";
       badge.style.fontSize = "13px";
       badge.style.fontWeight = "700";
       meta.appendChild(badge);
@@ -14017,7 +14017,7 @@ function createAI7Layout() {
     const mobileStatus = document.createElement("div");
     mobileStatus.className = "boss-mobile-status";
     mobileStatus.setAttribute("role", "status");
-    mobileStatus.textContent = "👑 보스 준비 중";
+    mobileStatus.textContent = "보스 준비 중";
     left.panel.insertBefore(mobileStatus, left.boardDiv);
     AI7.bossMobileStatusText = mobileStatus;
   } else {
@@ -14026,7 +14026,7 @@ function createAI7Layout() {
     AI7.bossMobileStatusText = null;
   }
   if (isBossStage) {
-    mobileAIScore.style.color = "#ffd7a1";
+    mobileAIScore.style.color = "#2d6a35";
     mobileAIScore.style.fontWeight = "800";
   }
   new MutationObserver(() => { mobileAIScore.textContent = right.scoreText.textContent; })
@@ -14048,8 +14048,8 @@ function createAI7Layout() {
   AI7.resultText.style.display = "none";
   AI7.resultText.style.padding = isBossStage ? "18px 20px" : "0";
   AI7.resultText.style.borderRadius = isBossStage ? "18px" : "0";
-  AI7.resultText.style.background = isBossStage ? "rgba(11, 11, 11, 0.88)" : "transparent";
-  AI7.resultText.style.boxShadow = isBossStage ? "0 18px 36px rgba(0,0,0,0.38)" : "none";
+  AI7.resultText.style.background = isBossStage ? "rgba(239, 248, 239, 0.96)" : "transparent";
+  AI7.resultText.style.boxShadow = isBossStage ? "0 10px 26px rgba(0,0,0,0.14)" : "none";
   gameContainer.appendChild(AI7.resultText);
 
   createBackButton(() => {
@@ -14083,23 +14083,23 @@ function createAI7Panel(titleText, role = "player") {
   if (isBossStage) {
     panel.style.borderRadius = "20px";
     panel.style.background = isEnemy
-      ? "linear-gradient(180deg, rgba(95,20,20,0.96), rgba(38,10,10,0.96))"
-      : "linear-gradient(180deg, rgba(22,64,63,0.96), rgba(11,35,34,0.96))";
+      ? "linear-gradient(180deg, rgba(226, 236, 217, 0.98), rgba(214, 228, 204, 0.98))"
+      : "linear-gradient(180deg, rgba(224, 241, 226, 0.98), rgba(209, 231, 212, 0.98))";
     panel.style.boxShadow = isEnemy
-      ? "0 18px 36px rgba(0,0,0,0.32), inset 0 0 0 1px rgba(255,170,120,0.16)"
-      : "0 18px 36px rgba(0,0,0,0.26), inset 0 0 0 1px rgba(167,255,239,0.12)";
+      ? "0 10px 24px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(126, 144, 90, 0.20)"
+      : "0 10px 24px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(82, 145, 94, 0.18)";
   }
 
   const title = document.createElement("div");
   title.textContent = isBossStage ? (isEnemy ? `👑 ${titleText}` : `🛡️ ${titleText}`) : titleText;
-  title.style.color = isBossStage ? (isEnemy ? "#ffe0b2" : "#d7fff8") : "#1b5e20";
+  title.style.color = isBossStage ? (isEnemy ? "#5b6f35" : "#2d6d35") : "#1b5e20";
   title.style.fontSize = isBossStage ? "28px" : "26px";
   title.style.fontWeight = "bold";
 
   const subText = document.createElement("div");
   if (isBossStage) {
-    subText.textContent = isEnemy ? "압도적인 보스 개체" : "강화 아이템으로 공략";
-    subText.style.color = isEnemy ? "rgba(255,232,212,0.82)" : "rgba(223,255,250,0.82)";
+    subText.textContent = isEnemy ? "강한 보스 AI" : "강화 아이템으로 도전";
+    subText.style.color = isEnemy ? "rgba(76, 93, 46, 0.82)" : "rgba(53, 103, 62, 0.82)";
     subText.style.fontSize = "14px";
     subText.style.fontWeight = "700";
   }
@@ -14108,11 +14108,11 @@ function createAI7Panel(titleText, role = "player") {
   if (isBossStage && isEnemy) {
     bossStatusText.className = "boss-state-label";
     bossStatusText.setAttribute("role", "status");
-    bossStatusText.textContent = "👑 보스 준비 중";
+    bossStatusText.textContent = "보스 준비 중";
   }
 
   const scoreText = document.createElement("div");
-  scoreText.style.color = isBossStage ? (isEnemy ? "#fff2e6" : "#f0fffb") : "#1b5e20";
+  scoreText.style.color = isBossStage ? (isEnemy ? "#345d22" : "#1d5b2a") : "#1b5e20";
   scoreText.style.fontSize = isBossStage ? "21px" : "22px";
   scoreText.style.fontWeight = "bold";
 
@@ -14120,7 +14120,7 @@ function createAI7Panel(titleText, role = "player") {
   targetText.textContent = isBossStage
     ? (isEnemy ? `보스 목표: ${AI7.TARGET}` : `도전자 목표: ${AI7.TARGET}`)
     : "목표: " + AI7.TARGET;
-  targetText.style.color = isBossStage ? (isEnemy ? "#ffd8bd" : "#d6fff8") : "#1b5e20";
+  targetText.style.color = isBossStage ? (isEnemy ? "#5e6e36" : "#2e6736") : "#1b5e20";
   targetText.style.fontSize = "18px";
   targetText.style.fontWeight = "bold";
 
@@ -14132,20 +14132,20 @@ function createAI7Panel(titleText, role = "player") {
     boardDiv.style.gap = "12px";
     boardDiv.style.padding = "14px";
     boardDiv.style.borderRadius = "22px";
-    boardDiv.style.background = isEnemy ? "rgba(0,0,0,0.22)" : "rgba(0,0,0,0.18)";
-    boardDiv.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,0.06)";
+    boardDiv.style.background = isEnemy ? "rgba(145, 176, 138, 0.32)" : "rgba(154, 188, 149, 0.28)";
+    boardDiv.style.boxShadow = "inset 0 0 0 1px rgba(71, 124, 77, 0.10)";
   }
 
   const timerBox = document.createElement("div");
   timerBox.style.width = `${AI7.SIZE * 80}px`;
   if (isBossStage) timerBox.className = "boss-timer-track";
   timerBox.style.height = isBossStage ? "22px" : "20px";
-  timerBox.style.background = isBossStage ? "rgba(255,255,255,0.12)" : "#ccc";
+  timerBox.style.background = isBossStage ? "rgba(113, 156, 117, 0.20)" : "#ccc";
   timerBox.style.marginTop = "10px";
   timerBox.style.borderRadius = isBossStage ? "999px" : "0";
   timerBox.style.overflow = "hidden";
   if (isBossStage) {
-    timerBox.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,0.1)";
+    timerBox.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,0.72)";
   }
 
   const timerBar = document.createElement("div");
@@ -14163,7 +14163,7 @@ function createAI7Panel(titleText, role = "player") {
   if (isBossStage) {
     itemPanel.style.padding = "10px 12px";
     itemPanel.style.borderRadius = "16px";
-    itemPanel.style.background = "rgba(255,255,255,0.06)";
+    itemPanel.style.background = "rgba(113, 156, 117, 0.10)";
   }
 
   if (role === "player") {
@@ -15297,15 +15297,15 @@ function drawAI7() {
 function getStage7TileStyle_AI7(value, side) {
   const enemy = !!side?.isAI;
   const palette = [
-    [2, enemy ? "linear-gradient(135deg, #5f2a2a, #823737)" : "linear-gradient(135deg, #1b4f4b, #25786f)", "#fff5ef"],
-    [4, enemy ? "linear-gradient(135deg, #703232, #984241)" : "linear-gradient(135deg, #1e605c, #2f8d83)", "#fff6f0"],
-    [8, enemy ? "linear-gradient(135deg, #8a3b2a, #c4613a)" : "linear-gradient(135deg, #2a7262, #3eb19a)", "#fff8f1"],
-    [16, enemy ? "linear-gradient(135deg, #a64f22, #e1813d)" : "linear-gradient(135deg, #35816e, #56c3a9)", "#fffdf6"],
-    [32, enemy ? "linear-gradient(135deg, #be6920, #f0a344)" : "linear-gradient(135deg, #419481, #73d9be)", "#101616"],
-    [64, enemy ? "linear-gradient(135deg, #ce821d, #ffcb53)" : "linear-gradient(135deg, #59a891, #9aeed7)", "#111616"],
-    [128, enemy ? "linear-gradient(135deg, #c38c17, #ffe07a)" : "linear-gradient(135deg, #5fb4a0, #b6f6e7)", "#111616"]
+    [2, enemy ? "linear-gradient(135deg, #d8e8cf, #c2d8b7)" : "linear-gradient(135deg, #c9e5cb, #b6d8b9)", "#fff5ef"],
+    [4, enemy ? "linear-gradient(135deg, #d2e4c6, #bed3af)" : "linear-gradient(135deg, #bee0c1, #a8d0ad)", "#fff6f0"],
+    [8, enemy ? "linear-gradient(135deg, #c8ddb9, #b0cfa2)" : "linear-gradient(135deg, #b4d8b7, #9bc9a0)", "#fff8f1"],
+    [16, enemy ? "linear-gradient(135deg, #b8d4a6, #9fc18f)" : "linear-gradient(135deg, #a5cca4, #8fba90)", "#fffdf6"],
+    [32, enemy ? "linear-gradient(135deg, #aed194, #97bf7f)" : "linear-gradient(135deg, #9ec892, #84b87b)", "#101616"],
+    [64, enemy ? "linear-gradient(135deg, #9fca88, #89b973)" : "linear-gradient(135deg, #96c388, #7caf72)", "#111616"],
+    [128, enemy ? "linear-gradient(135deg, #93c27d, #78ab68)" : "linear-gradient(135deg, #8abc7a, #71a563)", "#111616"]
   ];
-  let bg = enemy ? "linear-gradient(135deg, #d4a514, #ffe89f)" : "linear-gradient(135deg, #8adfcb, #d6fff5)";
+  let bg = enemy ? "linear-gradient(135deg, #89ba76, #6e9f5e)" : "linear-gradient(135deg, #84b97a, #6ca35f)";
   let color = "#111";
   for (const [limit, candidateBg, candidateColor] of palette) {
     if (value <= limit) {
@@ -15325,37 +15325,37 @@ function applyStage7CellTheme_AI7(cell, side, value, kind) {
   cell.style.borderRadius = "16px";
   cell.style.fontWeight = "800";
   cell.style.boxSizing = "border-box";
-  cell.style.border = enemy ? "1px solid rgba(255,208,170,0.18)" : "1px solid rgba(193,255,244,0.18)";
-  cell.style.boxShadow = "0 8px 16px rgba(0,0,0,0.18)";
+  cell.style.border = enemy ? "1px solid rgba(120, 150, 92, 0.18)" : "1px solid rgba(93, 145, 96, 0.18)";
+  cell.style.boxShadow = "0 8px 16px rgba(154, 188, 149, 0.28)";
 
   if (kind === "lock") {
-    cell.style.background = "linear-gradient(135deg, #33424f, #465765)";
+    cell.style.background = "linear-gradient(135deg, #7a8c74, #687b63)";
     cell.style.color = "#f5fbff";
     return;
   }
   if (kind === "shield") {
-    cell.style.background = "linear-gradient(135deg, #355c7d, #5fb3ff)";
+    cell.style.background = "linear-gradient(135deg, #7da382, #97c19b)";
     cell.style.color = "#f7fcff";
     return;
   }
   if (kind === "curse") {
-    cell.style.background = "linear-gradient(135deg, #3b2456, #6a36a1)";
+    cell.style.background = "linear-gradient(135deg, #7b9175, #91a88c)";
     cell.style.color = "#fff5ff";
     return;
   }
   if (kind === "laser") {
-    cell.style.background = "linear-gradient(135deg, #5f3f20, #c67d1f)";
+    cell.style.background = "linear-gradient(135deg, #98a670, #b5bf86)";
     cell.style.color = "#fff8ea";
     return;
   }
   if (kind === "bomb") {
-    cell.style.background = "linear-gradient(135deg, #4a4a4a, #1f1f1f)";
+    cell.style.background = "linear-gradient(135deg, #6e7a68, #566053)";
     cell.style.color = "#fff";
     return;
   }
   if (!value) {
-    cell.style.background = enemy ? "rgba(111, 34, 34, 0.36)" : "rgba(31, 91, 83, 0.36)";
-    cell.style.color = enemy ? "rgba(255,228,210,0.45)" : "rgba(218,255,247,0.45)";
+    cell.style.background = enemy ? "rgba(157, 184, 145, 0.52)" : "rgba(165, 196, 155, 0.48)";
+    cell.style.color = enemy ? "rgba(53, 78, 36, 0.42)" : "rgba(55, 92, 57, 0.42)";
     return;
   }
   const theme = getStage7TileStyle_AI7(value, side);
@@ -15430,11 +15430,11 @@ function updateOneTimer_AI7(side, bar) {
 
   if (isBossStage7_AI7()) {
     if (percent < 30) {
-      bar.style.background = side?.isAI ? "linear-gradient(90deg, #ff6f61, #ff3d3d)" : "linear-gradient(90deg, #ff8a65, #ff5252)";
+      bar.style.background = side?.isAI ? "linear-gradient(90deg, #e39f5f, #c86a2f)" : "linear-gradient(90deg, #d79f5c, #bb7d2d)";
     } else if (percent < 60) {
-      bar.style.background = side?.isAI ? "linear-gradient(90deg, #ffb74d, #ff7043)" : "linear-gradient(90deg, #ffd54f, #ffb300)";
+      bar.style.background = side?.isAI ? "linear-gradient(90deg, #c8b25a, #9fad58)" : "linear-gradient(90deg, #b8c862, #8faf56)";
     } else {
-      bar.style.background = side?.isAI ? "linear-gradient(90deg, #ffcc80, #ff8f00)" : "linear-gradient(90deg, #5eead4, #14b8a6)";
+      bar.style.background = side?.isAI ? "linear-gradient(90deg, #a5c66b, #7ea95d)" : "linear-gradient(90deg, #8bc77a, #5f9e5f)";
     }
     return;
   }
