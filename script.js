@@ -13701,7 +13701,11 @@ function startChallengeRound_AI7() {
 const AI7 = {
   SIZE: 5,
   TARGET: getStageGoal(7, 1),
-  TIMER_MAX: 10,
+  TIMER_MAX: 10, // 8-1 / 9-1 타이머
+  STAGE7_BASE_TIMER: -50,
+  STAGE7_AI_TIMER_LEVEL: 700,
+  STAGE7_REQUIRED_TIMER_LEVEL: 600,
+  TILES_PER_MOVE: 2,
 
   player: null,
   ai: null,
@@ -13735,10 +13739,10 @@ function initGame_7_1() {
   clearTimeout(AI7.nextRoundTimeout);
   const item16Count = Number(localStorage.getItem("item16Count")) || 0;
 
-  if (item16Count < 600) {
+  if (item16Count < AI7.STAGE7_REQUIRED_TIMER_LEVEL) {
     alert(
       `7-1 플레이 조건\n\n` +
-      `아이템16 필요 수량 : 600개\n` +
+      `아이템16 필요 수량 : ${AI7.STAGE7_REQUIRED_TIMER_LEVEL}개\n` +
       `현재 수량 : ${item16Count}개`
     );
 
@@ -13760,8 +13764,9 @@ function initGame_7_1() {
   addRandom_AI7(AI7.ai);
   addRandom_AI7(AI7.ai);
 
+  // 플레이어에게만 구입한 시작 아이템을 적용한다.
+  // AI는 아이템7/타이머 700레벨 사양을 고정 사용하며 상점을 참조하지 않는다.
   applyStartItems_AI7(AI7.player);
-applyStartItems_AI7(AI7.ai);
 
   createAI7Layout();
   if (AI7.challengeMode) {
@@ -13793,14 +13798,15 @@ applyStartItems_AI7(AI7.ai);
   startAITimer_AI7();
 }
 
-// 8-1 / 9-1은 AI 실력 대전이므로 상점에서 구매한 강화가
-// 플레이어와 AI 어느 쪽에도 적용되지 않는다. 7-1은 기존 규칙 유지.
-function shopEffectsEnabled_AI7() {
-  return AI7.challengeMode !== 8 && AI7.challengeMode !== 9;
+// 7-1 플레이어에게만 상점 강화를 적용한다.
+// 7-1 AI와 8-1/9-1의 양측은 상점 구매 내역과 완전히 분리한다.
+function shopEffectsEnabled_AI7(side) {
+  return AI7.challengeMode !== 8 && AI7.challengeMode !== 9 &&
+    !!side && !side.isAI;
 }
 
-function getScoreBonus_AI7() {
-  if (!shopEffectsEnabled_AI7()) return 0;
+function getScoreBonus_AI7(side) {
+  if (!shopEffectsEnabled_AI7(side)) return 0;
   const bonus1 = Number(localStorage.getItem("item1Count")) || 0;
   const bonus5 = Number(localStorage.getItem("item5Count")) || 0;
   const bonus9 = Number(localStorage.getItem("item9Count")) || 0;
@@ -13809,13 +13815,18 @@ function getScoreBonus_AI7() {
   return bonus1 + bonus5 * 10 + bonus9 * 100 + bonus13 * 1000;
 }
 
-function getSpawnValue_AI7() {
-  // 8-1/9-1은 상점 강화 없이 4/8/16을 각 50%/30%/20%로 생성한다.
-  // AI Worker에도 아래와 동일한 확률을 전달한다.
-  if (!shopEffectsEnabled_AI7()) {
+function getSpawnValue_AI7(side) {
+  // 8-1/9-1: 플레이어·AI 모두 상점 미적용, 4/8/16.
+  if (AI7.challengeMode === 8 || AI7.challengeMode === 9) {
     const r = Math.random();
     return r < 0.5 ? 4 : (r < 0.8 ? 8 : 16);
   }
+  // 7-1 AI: 상점 구매와 관계없이 아이템7의 생성 효과(16/32/64) 고정.
+  if (side && side.isAI) {
+    const r = Math.random();
+    return r < 0.5 ? 16 : (r < 0.8 ? 32 : 64);
+  }
+  // 7-1 플레이어: 본인이 구매한 상점 아이템의 생성 효과만 적용.
   let value;
 
   if (localStorage.getItem("item8")) {
@@ -13846,9 +13857,9 @@ function getSpawnValue_AI7() {
 }
 
 function applyStartItems_AI7(side) {
-  // 8-1/9-1에서는 상점의 시작 지급(아이템11/12/15)을 끈다.
-  // 이동 중 얻는 폭탄·레이저·블록은 이 함수와 무관하므로 유지된다.
-  if (!shopEffectsEnabled_AI7()) return;
+  // 7-1 플레이어에게만 상점 시작 아이템(11/12/15)을 지급한다.
+  // AI는 상점 구매에 관계없이 고정 사양이며, 이동 중 랜덤 아이템은 유지된다.
+  if (!shopEffectsEnabled_AI7(side)) return;
 
   if (localStorage.getItem("item11")) {
     useItemImmediately_AI7(side, "bomb");
@@ -13866,6 +13877,7 @@ function applyStartItems_AI7(side) {
 function createAI7Side(name) {
   return {
     name,
+    isAI: name === "AI",
     board: Array.from({ length: AI7.SIZE }, () => Array(AI7.SIZE).fill(0)),
     score: 0,
     timer: AI7.TIMER_MAX,
@@ -14210,9 +14222,10 @@ function aiMove_AI7() {
   makeMove_AI7(selected.dir);
 }
 
-function getSpawnDistribution_AI7() {
-  // Expectimax도 실제 생성 규칙과 같은 분포로 예측해야 한다.
-  if (!shopEffectsEnabled_AI7()) return [[4,0.5],[8,0.3],[16,0.2]];
+function getSpawnDistribution_AI7(side = AI7.ai) {
+  // Expectimax도 실제 각 진영의 생성 규칙과 같은 분포로 예측해야 한다.
+  if (AI7.challengeMode === 8 || AI7.challengeMode === 9) return [[4,0.5],[8,0.3],[16,0.2]];
+  if (side && side.isAI) return [[16,0.5],[32,0.3],[64,0.2]];
   if (localStorage.getItem('item8')) return [[32,0.5],[64,0.3],[128,0.2]];
   if (localStorage.getItem('item7')) return [[16,0.5],[32,0.3],[64,0.2]];
   if (localStorage.getItem('item4')) return [[8,0.5],[16,0.3],[32,0.2]];
@@ -14275,8 +14288,8 @@ function requestExpectimax_AI7() {
     // 현재 이동은 실제 게임 시뮬레이션 결과를 사용하며,
     // 이후 확률 노드에서 실제 규칙대로 타일을 두 개 생성한다.
     worker.postMessage({
-      id:requestId, level:AI7.difficulty, budgetMs, spawn:getSpawnDistribution_AI7(),
-      mergeBonus:getScoreBonus_AI7(),
+      id:requestId, level:AI7.difficulty, budgetMs, spawn:getSpawnDistribution_AI7(AI7.ai),
+      mergeBonus:getScoreBonus_AI7(AI7.ai),
       // 특수 장애물이 있으면 다음 턴의 단순 격자 추론을 제한한다.
       special: !!(AI7.ai.locks.length || AI7.ai.shields.length || AI7.ai.bombs.length ||
         AI7.ai.lasers.length || AI7.ai.curseBombs.length || AI7.ai.turnCount <= 1),
@@ -14291,6 +14304,7 @@ function requestExpectimax_AI7() {
 function cloneSide_AI7(side) {
   return {
     name: side.name,
+    isAI: side.isAI,
     board: side.board.map(row => [...row]),
     score: side.score,
     timer: side.timer,
@@ -14420,7 +14434,7 @@ function mergeLine_AI7(side, line) {
       const merged = arr[i] * 2;
       result.push(merged);
 
-      side.score += merged + getScoreBonus_AI7();
+      side.score += merged + getScoreBonus_AI7(side);
 
       i++;
     } else {
@@ -14456,7 +14470,7 @@ function mergeEntries_AI7(side, entries) {
         oldY: cur.oldY
       });
 
-      side.score += merged + getScoreBonus_AI7();
+      side.score += merged + getScoreBonus_AI7(side);
       i++;
     } else {
       result.push(cur);
@@ -14759,9 +14773,10 @@ function updateObstacles_AI7(side) {
 function afterMove_AI7(side) {
   side.turnCount--;
   updateObstacles_AI7(side);
-  addRandom_AI7(side);
-  addRandom_AI7(side);
-
+  // 양측 모두 정상 이동마다 정확히 두 칸에 타일을 생성한다(빈칸이 부족하면 가능한 만큼).
+  for (let i = 0; i < AI7.TILES_PER_MOVE; i++) {
+    addRandom_AI7(side);
+  }
 
   if (side.turnCount <= 0) {
     side.turnCount = 5;
@@ -14792,7 +14807,7 @@ function addRandom_AI7(side) {
 
   const [x, y] = empty[Math.floor(Math.random() * empty.length)];
 
-  side.board[x][y] = getSpawnValue_AI7();
+  side.board[x][y] = getSpawnValue_AI7(side);
 }
 function getRandomItem_AI7() {
   const items = ["bomb", "laser", "block"];
@@ -15024,13 +15039,18 @@ else cell.textContent = side.board[i][j] || "";
 }
 
 function getMaxTimer_AI7(side) {
-  // 8-1/9-1의 플레이어와 AI 모두 10초 기본 타이머를 사용한다.
-  if (side === AI7.player && shopEffectsEnabled_AI7()) {
-    const item16Count = Number(localStorage.getItem("item16Count")) || 0;
-    return 10 + item16Count * 0.1;
+  // 8-1/9-1 타이머는 기존과 같이 양측 10초로 유지한다.
+  if (AI7.challengeMode === 8 || AI7.challengeMode === 9) return AI7.TIMER_MAX;
+
+  // 7-1 AI는 상점과 무관하게 타이머 강화 700레벨 효과를 받는다.
+  if (side && side.isAI) {
+    return AI7.STAGE7_BASE_TIMER + AI7.STAGE7_AI_TIMER_LEVEL * 0.1; // 20초
   }
 
-  return 10;
+  // 7-1 플레이어: 기본 -50초 + 본인 타이머 강화 레벨당 0.1초.
+  const item16Count = Math.min(MAX_TIMER_ITEMS,
+    Math.max(0, Number(localStorage.getItem("item16Count")) || 0));
+  return Math.max(0, AI7.STAGE7_BASE_TIMER + item16Count * 0.1);
 }
 
 function resetTimer_AI7(side) {
@@ -15047,7 +15067,9 @@ function updateOneTimer_AI7(side, bar) {
   if (!bar) return;
 
   const maxTimer = getMaxTimer_AI7(side);
-  const percent = Math.max(0, side.timer / maxTimer * 100);
+  const percent = maxTimer > 0
+    ? Math.max(0, Math.min(100, side.timer / maxTimer * 100))
+    : 0;
 
   bar.style.width = percent + "%";
 
