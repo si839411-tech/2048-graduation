@@ -161,9 +161,15 @@
       const gap = Math.max(3, Math.min(7, Math.floor(width / (cols * 12))));
       const side = Math.floor((width - gap * (cols - 1)) / cols);
       board.style.setProperty('grid-template-columns', `repeat(${cols}, minmax(0, 1fr))`, 'important');
-      board.style.setProperty('grid-template-rows', `repeat(${rows}, ${side}px)`, 'important');
+      // Boss 5×5 board has an inner border/padding; account for it so the
+      // final row cannot protrude below the frame on narrow smartphones.
+      board.style.setProperty('grid-template-rows', bossBoard
+        ? `repeat(${rows}, minmax(0, 1fr))`
+        : `repeat(${rows}, ${side}px)`, 'important');
       board.style.setProperty('width', `${width}px`, 'important');
-      board.style.setProperty('height', `${rows * side + (rows - 1) * gap}px`, 'important');
+      board.style.setProperty('height', bossBoard
+        ? `${width}px`
+        : `${rows * side + (rows - 1) * gap}px`, 'important');
       board.style.setProperty('gap', `${gap}px`, 'important');
       board.style.setProperty('transform', 'none', 'important');
       board.style.setProperty('margin-left', 'auto', 'important');

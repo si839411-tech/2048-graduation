@@ -13735,6 +13735,8 @@ const AI7 = {
   bossScheduleVersion: 0,
   bossMode: "normal",
   bossDelayMs: 0,
+  bossRageEndsAt: 0,
+  bossRageCooldownUntil: 0,
   bossStatusText: null,
   bossMobileStatusText: null,
   bossPanel: null
@@ -13763,6 +13765,9 @@ function initGame_7_1() {
 
   gameContainer.innerHTML = "";
   AI7.ended = false;
+  AI7.bossMode = "normal";
+  AI7.bossRageEndsAt = 0;
+  AI7.bossRageCooldownUntil = 0;
 
   AI7.player = createAI7Side("플레이어");
   AI7.ai = createAI7Side("AI");
@@ -13916,72 +13921,12 @@ function createAI7Layout() {
   screen.style.alignItems = "center";
   screen.style.justifyContent = isBossStage ? "flex-start" : "center";
   screen.style.boxSizing = "border-box";
-  screen.style.padding = isBossStage ? "20px 18px 80px" : "0";
-  screen.style.gap = isBossStage ? "18px" : "0";
+  screen.style.padding = isBossStage ? "14px 12px 72px" : "0";
+  screen.style.gap = isBossStage ? "12px" : "0";
   if (isBossStage) {
     screen.style.background = "linear-gradient(180deg, #edf7ee 0%, #e4f1e5 100%)";
     screen.style.borderRadius = "18px";
     screen.style.boxShadow = "inset 0 0 0 1px rgba(71, 124, 77, 0.10)";
-  }
-
-  if (isBossStage) {
-    const intro = document.createElement("div");
-    intro.className = "boss-stage-header";
-    intro.style.width = "min(1080px, 100%)";
-    intro.style.display = "flex";
-    intro.style.flexDirection = "column";
-    intro.style.alignItems = "center";
-    intro.style.gap = "8px";
-    intro.style.padding = "16px 18px";
-    intro.style.borderRadius = "18px";
-    intro.style.background = "linear-gradient(135deg, rgba(209, 233, 210, 0.98), rgba(191, 220, 192, 0.98))";
-    intro.style.boxShadow = "0 10px 22px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(76, 138, 85, 0.18)";
-
-    const overline = document.createElement("div");
-    overline.textContent = "BOSS STAGE";
-    overline.style.color = "#4d7a51";
-    overline.style.fontWeight = "800";
-    overline.style.letterSpacing = "0.18em";
-    overline.style.fontSize = "clamp(11px, 2vw, 14px)";
-
-    const title = document.createElement("div");
-    title.textContent = "7-1 · Boss Challenge";
-    title.style.color = "#225a2a";
-    title.style.fontWeight = "900";
-    title.style.fontSize = "clamp(24px, 4vw, 38px)";
-    title.style.textAlign = "center";
-
-    const subtitle = document.createElement("div");
-    subtitle.textContent = "강화한 아이템으로 보스 AI를 돌파하세요";
-    subtitle.style.color = "rgba(36, 84, 43, 0.86)";
-    subtitle.style.fontSize = "clamp(13px, 2.1vw, 16px)";
-    subtitle.style.textAlign = "center";
-
-    const meta = document.createElement("div");
-    meta.className = "boss-intro-badges";
-    meta.style.display = "flex";
-    meta.style.flexWrap = "wrap";
-    meta.style.justifyContent = "center";
-    meta.style.gap = "8px";
-    [
-      `목표 점수 ${AI7.TARGET}`,
-      `플레이 조건 타이머 Lv.${AI7.STAGE7_REQUIRED_TIMER_LEVEL}+`,
-      "이동마다 타일 2개 생성"
-    ].forEach(label => {
-      const badge = document.createElement("div");
-      badge.textContent = label;
-      badge.style.padding = "8px 12px";
-      badge.style.borderRadius = "999px";
-      badge.style.background = "rgba(255,255,255,0.72)";
-      badge.style.border = "1px solid rgba(76, 138, 85, 0.22)";
-      badge.style.color = "#2e6036";
-      badge.style.fontSize = "13px";
-      badge.style.fontWeight = "700";
-      meta.appendChild(badge);
-    });
-
-    intro.append(overline, title, subtitle, meta);
-    screen.appendChild(intro);
   }
 
   const wrapper = document.createElement("div");
@@ -14007,6 +13952,10 @@ function createAI7Layout() {
   wrapper.classList.add("ai-competition-layout");
   left.panel.classList.add("ai-my-side");
   right.panel.classList.add("ai-enemy-side");
+  if (isBossStage) {
+    left.panel.classList.add("boss-player-theme");
+    right.panel.classList.add("boss-fixed-theme");
+  }
   const mobileAIScore = document.createElement("div");
   mobileAIScore.className = "mobile-opponent-score";
   mobileAIScore.textContent = right.scoreText.textContent;
@@ -14018,7 +13967,10 @@ function createAI7Layout() {
     mobileStatus.className = "boss-mobile-status";
     mobileStatus.setAttribute("role", "status");
     mobileStatus.textContent = "보스 준비 중";
-    left.panel.insertBefore(mobileStatus, left.boardDiv);
+    const mobileSummary = document.createElement("div");
+    mobileSummary.className = "boss-mobile-summary";
+    mobileSummary.append(mobileAIScore, mobileStatus);
+    left.panel.insertBefore(mobileSummary, left.boardDiv);
     AI7.bossMobileStatusText = mobileStatus;
   } else {
     AI7.bossPanel = null;
@@ -14129,8 +14081,11 @@ function createAI7Panel(titleText, role = "player") {
   boardDiv.style.gridTemplateColumns = `repeat(${AI7.SIZE}, 80px)`;
   boardDiv.style.gridTemplateRows = `repeat(${AI7.SIZE}, 80px)`;
   if (isBossStage) {
-    boardDiv.style.gap = "12px";
-    boardDiv.style.padding = "14px";
+    boardDiv.style.gap = "6px";
+    if (typeof matchMedia === "function" && matchMedia("(max-width: 700px)").matches) {
+      boardDiv.style.setProperty("gap", "3px", "important");
+    }
+    boardDiv.style.padding = "10px";
     boardDiv.style.borderRadius = "22px";
     boardDiv.style.background = isEnemy ? "rgba(145, 176, 138, 0.32)" : "rgba(154, 188, 149, 0.28)";
     boardDiv.style.boxShadow = "inset 0 0 0 1px rgba(71, 124, 77, 0.10)";
@@ -14284,7 +14239,7 @@ const BOSS7_MODES = Object.freeze({
 });
 
 // 기본 가중치 55/25/17/3. 점수 차이와 보드의 위험도에 따라 보스가 적응한다.
-function selectBossMode_AI7(randomValue = Math.random()) {
+function selectBossMode_AI7(randomValue = Math.random(), excludeRage = false) {
   const weights = {normal:55, rage:25, analysis:17, charge:3};
   const player = AI7.player;
   const boss = AI7.ai;
@@ -14304,6 +14259,11 @@ function selectBossMode_AI7(randomValue = Math.random()) {
       weights.analysis += 24;
       weights.charge -= 2;
     }
+  }
+  // 폭주 종료 직후에는 잠시 재발동을 막아 2~3초짜리 단일 페이즈로 보이게 한다.
+  if (excludeRage) {
+    weights.normal += weights.rage;
+    weights.rage = 0;
   }
   // 매우 긴 충전 행동이 연속되는 일을 방지한다.
   if (AI7.bossMode === "charge") {
@@ -14329,7 +14289,9 @@ function getBossDelay_AI7(mode, randomValue = Math.random()) {
 
 function setBossModeUI_AI7(mode, delayMs) {
   const config = BOSS7_MODES[mode] || BOSS7_MODES.normal;
-  const message = `${config.icon} ${config.label} 상태 · 다음 이동 약 ${(delayMs / 1000).toFixed(1)}초`;
+  const message = mode === "rage"
+    ? `🔥 폭주 중 · ${(Math.max(0, AI7.bossRageEndsAt - Date.now()) / 1000).toFixed(1)}초 남음`
+    : `${config.icon} ${config.label} 상태 · 다음 이동 약 ${(delayMs / 1000).toFixed(1)}초`;
   if (AI7.bossStatusText) AI7.bossStatusText.textContent = message;
   if (AI7.bossMobileStatusText) {
     AI7.bossMobileStatusText.textContent = message;
@@ -14351,8 +14313,44 @@ function cancelBossMove_AI7() {
 function scheduleBossMove_AI7() {
   cancelBossMove_AI7();
   if (AI7.ended || !isBossStage7_AI7() || !AI7.ai) return;
-  const mode = selectBossMode_AI7();
-  const delayMs = getBossDelay_AI7(mode);
+
+  const now = Date.now();
+  // 폭주는 선택될 때 단 한 번 2~3초의 지속시간을 정한다.
+  // 해당 페이즈 중에는 다음 행동을 다시 추첨하지 않는다.
+  if (AI7.bossRageEndsAt && now >= AI7.bossRageEndsAt) {
+    AI7.bossRageEndsAt = 0;
+    AI7.bossRageCooldownUntil = now + 2000;
+  }
+  let mode;
+  if (AI7.bossRageEndsAt > now) {
+    mode = "rage";
+  } else {
+    mode = selectBossMode_AI7(Math.random(), now < AI7.bossRageCooldownUntil);
+    if (mode === "rage") {
+      AI7.bossRageEndsAt = now + 2000 + Math.random() * 1000;
+    }
+  }
+
+  const rageRemaining = mode === "rage" ? Math.max(0, AI7.bossRageEndsAt - Date.now()) : 0;
+  // 종료까지 0.3초 미만이라면 새 타일 이동 없이 페이즈 종료만 처리한다.
+  // 폭주 중 실제 이동 간격은 언제나 0.3~0.8초이다.
+  if (mode === "rage" && rageRemaining < 300) {
+    AI7.bossMode = "rage";
+    AI7.bossDelayMs = 0;
+    setBossModeUI_AI7("rage", 0);
+    const token = AI7.bossScheduleVersion;
+    AI7.bossMoveTimeout = setTimeout(() => {
+      AI7.bossMoveTimeout = null;
+      if (token !== AI7.bossScheduleVersion || AI7.ended || !isBossStage7_AI7()) return;
+      AI7.bossRageEndsAt = 0;
+      AI7.bossRageCooldownUntil = Date.now() + 2000;
+      scheduleBossMove_AI7();
+    }, rageRemaining);
+    return;
+  }
+
+  let delayMs = getBossDelay_AI7(mode);
+  if (mode === "rage") delayMs = Math.max(300, Math.min(delayMs, rageRemaining));
   AI7.bossMode = mode;
   AI7.bossDelayMs = delayMs;
   setBossModeUI_AI7(mode, delayMs);
@@ -14360,7 +14358,7 @@ function scheduleBossMove_AI7() {
   AI7.bossMoveTimeout = setTimeout(() => {
     AI7.bossMoveTimeout = null;
     if (token !== AI7.bossScheduleVersion || AI7.ended || !isBossStage7_AI7()) return;
-    // Worker 계산이 아직 진행 중인 경우 중복 이동 요청을 보내지 않는다.
+    // Worker 계산 중이라면 중복 요청을 보내지 않는다.
     if (AI7.aiThinking) {
       AI7.bossMoveTimeout = setTimeout(() => {
         if (token === AI7.bossScheduleVersion && !AI7.ended && isBossStage7_AI7()) scheduleBossMove_AI7();
@@ -14368,12 +14366,11 @@ function scheduleBossMove_AI7() {
       return;
     }
     if (mode === "analysis" || mode === "charge") {
-      // 분석/충전 행동: 실제 제한시간 Expectimax를 사용한다. 학습형 모델은 다음 단계.
       requestExpectimax_AI7(mode === "charge" ? 95 : 85);
     } else {
       aiMove_AI7();
     }
-    // 다음 일정은 실제 이동 완료 후 makeMove_AI7에서 예약한다.
+    // 이동 완료 후 makeMove_AI7에서 같은 페이즈로 다음 행동을 예약한다.
   }, delayMs);
 }
 
@@ -15294,73 +15291,11 @@ function drawAI7() {
   updateSlotUI_AI7();
 }
 
-function getStage7TileStyle_AI7(value, side) {
-  const enemy = !!side?.isAI;
-  const palette = [
-    [2, enemy ? "linear-gradient(135deg, #d8e8cf, #c2d8b7)" : "linear-gradient(135deg, #c9e5cb, #b6d8b9)", "#fff5ef"],
-    [4, enemy ? "linear-gradient(135deg, #d2e4c6, #bed3af)" : "linear-gradient(135deg, #bee0c1, #a8d0ad)", "#fff6f0"],
-    [8, enemy ? "linear-gradient(135deg, #c8ddb9, #b0cfa2)" : "linear-gradient(135deg, #b4d8b7, #9bc9a0)", "#fff8f1"],
-    [16, enemy ? "linear-gradient(135deg, #b8d4a6, #9fc18f)" : "linear-gradient(135deg, #a5cca4, #8fba90)", "#fffdf6"],
-    [32, enemy ? "linear-gradient(135deg, #aed194, #97bf7f)" : "linear-gradient(135deg, #9ec892, #84b87b)", "#101616"],
-    [64, enemy ? "linear-gradient(135deg, #9fca88, #89b973)" : "linear-gradient(135deg, #96c388, #7caf72)", "#111616"],
-    [128, enemy ? "linear-gradient(135deg, #93c27d, #78ab68)" : "linear-gradient(135deg, #8abc7a, #71a563)", "#111616"]
-  ];
-  let bg = enemy ? "linear-gradient(135deg, #89ba76, #6e9f5e)" : "linear-gradient(135deg, #84b97a, #6ca35f)";
-  let color = "#111";
-  for (const [limit, candidateBg, candidateColor] of palette) {
-    if (value <= limit) {
-      bg = candidateBg;
-      color = candidateColor;
-      break;
-    }
-  }
-  return { bg, color };
-}
-
 function applyStage7CellTheme_AI7(cell, side, value, kind) {
   if (!isBossStage7_AI7()) return;
-  const enemy = !!side?.isAI;
-  cell.style.width = "80px";
-  cell.style.height = "80px";
-  cell.style.borderRadius = "16px";
-  cell.style.fontWeight = "800";
-  cell.style.boxSizing = "border-box";
-  cell.style.border = enemy ? "1px solid rgba(120, 150, 92, 0.18)" : "1px solid rgba(93, 145, 96, 0.18)";
-  cell.style.boxShadow = "0 8px 16px rgba(154, 188, 149, 0.28)";
-
-  if (kind === "lock") {
-    cell.style.background = "linear-gradient(135deg, #7a8c74, #687b63)";
-    cell.style.color = "#f5fbff";
-    return;
-  }
-  if (kind === "shield") {
-    cell.style.background = "linear-gradient(135deg, #7da382, #97c19b)";
-    cell.style.color = "#f7fcff";
-    return;
-  }
-  if (kind === "curse") {
-    cell.style.background = "linear-gradient(135deg, #7b9175, #91a88c)";
-    cell.style.color = "#fff5ff";
-    return;
-  }
-  if (kind === "laser") {
-    cell.style.background = "linear-gradient(135deg, #98a670, #b5bf86)";
-    cell.style.color = "#fff8ea";
-    return;
-  }
-  if (kind === "bomb") {
-    cell.style.background = "linear-gradient(135deg, #6e7a68, #566053)";
-    cell.style.color = "#fff";
-    return;
-  }
-  if (!value) {
-    cell.style.background = enemy ? "rgba(157, 184, 145, 0.52)" : "rgba(165, 196, 155, 0.48)";
-    cell.style.color = enemy ? "rgba(53, 78, 36, 0.42)" : "rgba(55, 92, 57, 0.42)";
-    return;
-  }
-  const theme = getStage7TileStyle_AI7(value, side);
-  cell.style.background = theme.bg;
-  cell.style.color = theme.color;
+  cell.classList.add("boss-stage-cell");
+  cell.dataset.bossKind = kind;
+  cell.dataset.bossValue = String(value || 0);
 }
 
 function drawSide_AI7(side, boardDiv) {
@@ -15430,11 +15365,11 @@ function updateOneTimer_AI7(side, bar) {
 
   if (isBossStage7_AI7()) {
     if (percent < 30) {
-      bar.style.background = side?.isAI ? "linear-gradient(90deg, #e39f5f, #c86a2f)" : "linear-gradient(90deg, #d79f5c, #bb7d2d)";
+      bar.style.background = side?.isAI ? "linear-gradient(90deg, #d98758, #b75640)" : "#d96d58";
     } else if (percent < 60) {
-      bar.style.background = side?.isAI ? "linear-gradient(90deg, #c8b25a, #9fad58)" : "linear-gradient(90deg, #b8c862, #8faf56)";
+      bar.style.background = side?.isAI ? "linear-gradient(90deg, #f0c174, #d69b55)" : "#d4ad52";
     } else {
-      bar.style.background = side?.isAI ? "linear-gradient(90deg, #a5c66b, #7ea95d)" : "linear-gradient(90deg, #8bc77a, #5f9e5f)";
+      bar.style.background = side?.isAI ? "linear-gradient(90deg, #a99054, #f0d17e)" : "var(--ui-accent, #5da96a)";
     }
     return;
   }

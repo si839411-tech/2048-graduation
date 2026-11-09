@@ -364,3 +364,197 @@ body[data-achievement-theme="rainbow"] { --shop-item-bg: #fffaff; --shop-item-in
     font-size: clamp(11px, 3vw, 13px);
   }
 }
+
+
+/* V25: 7-1 is one shared stage backdrop with player-selected palette / fixed boss palette.
+   More specific than the global body[data-achievement-theme] .cell !important rules. */
+#gameContainer .boss-stage-7 {
+  background: var(--skin-bg, #e8f5e9) !important;
+  color: var(--skin-text, #23542d);
+}
+#gameContainer .boss-stage-7 .boss-player-theme {
+  background: var(--ui-surface, #f3fcf4) !important;
+  color: var(--ui-text, #1f5e2e) !important;
+  border: 2px solid var(--ui-border, #93c79b);
+  box-shadow: 0 6px 20px rgba(0,0,0,.1) !important;
+}
+#gameContainer .boss-stage-7 .boss-player-theme > div:not(.board):not(.game-item-panel-inline):not(.mobile-opponent-score):not(.boss-mobile-status),
+#gameContainer .boss-stage-7 .boss-player-theme .mobile-opponent-score {
+  color: var(--ui-text, #1f5e2e) !important;
+}
+#gameContainer .boss-stage-7 .boss-player-theme .board {
+  background: var(--ui-bg, #d9eddc) !important;
+  border: 1px solid var(--ui-border, #a5cdaa) !important;
+}
+#gameContainer .boss-stage-7 .boss-player-theme .board .cell.boss-stage-cell,
+body[data-achievement-theme] #gameContainer .boss-stage-7 .boss-player-theme .board .cell.boss-stage-cell {
+  background: var(--skin-tile, #a5d6a7) !important;
+  color: var(--skin-text, #1b5e20) !important;
+  border: 1px solid var(--ui-border, #9fc8a3);
+  box-shadow: none !important;
+  filter: none !important;
+  font-weight: 800;
+}
+#gameContainer .boss-stage-7 .boss-player-theme .board .cell.boss-stage-cell[data-boss-value="0"][data-boss-kind="tile"],
+body[data-achievement-theme] #gameContainer .boss-stage-7 .boss-player-theme .board .cell.boss-stage-cell[data-boss-value="0"][data-boss-kind="tile"] {
+  background: var(--ui-track, #d8e9da) !important;
+  color: transparent !important;
+}
+#gameContainer .boss-stage-7 .boss-player-theme .game-item-panel-inline {
+  background: var(--ui-bg, #e1f2e4) !important;
+  border: 1px solid var(--ui-border, #a2c7a7);
+}
+#gameContainer .boss-stage-7 .boss-player-theme .boss-timer-track {
+  background: var(--ui-track, #c8dec9) !important;
+}
+/* Fixed obsidian / royal-violet / gold boss design, regardless of selected theme. */
+#gameContainer .boss-stage-7 .boss-fixed-theme {
+  background: linear-gradient(170deg,#30263f 0%,#211c31 100%) !important;
+  color: #fff4dc !important;
+  border: 2px solid #9f8855 !important;
+  box-shadow: 0 8px 25px rgba(21,17,35,.25), inset 0 0 0 1px #5e5075 !important;
+}
+#gameContainer .boss-stage-7 .boss-fixed-theme > div:not(.board) {
+  color: #fff0d2 !important;
+}
+#gameContainer .boss-stage-7 .boss-fixed-theme .board {
+  background: #1c182b !important;
+  box-shadow: inset 0 0 0 1px #544662 !important;
+}
+#gameContainer .boss-stage-7 .boss-fixed-theme .board .cell.boss-stage-cell,
+body[data-achievement-theme] #gameContainer .boss-stage-7 .boss-fixed-theme .board .cell.boss-stage-cell {
+  background: linear-gradient(135deg,#c2a66e,#e4c884) !important;
+  color: #282036 !important;
+  filter: none !important;
+  border: 1px solid #f3dfa7 !important;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.22) !important;
+  font-weight: 800;
+}
+#gameContainer .boss-stage-7 .boss-fixed-theme .board .cell.boss-stage-cell[data-boss-value="0"][data-boss-kind="tile"],
+body[data-achievement-theme] #gameContainer .boss-stage-7 .boss-fixed-theme .board .cell.boss-stage-cell[data-boss-value="0"][data-boss-kind="tile"] {
+  background: #42364f !important;
+  color: transparent !important;
+  border-color: #554766 !important;
+}
+#gameContainer .boss-stage-7 .boss-fixed-theme .board .cell.boss-stage-cell[data-boss-value="2"],
+#gameContainer .boss-stage-7 .boss-fixed-theme .board .cell.boss-stage-cell[data-boss-value="4"],
+#gameContainer .boss-stage-7 .boss-fixed-theme .board .cell.boss-stage-cell[data-boss-value="8"] {
+  background: #b39e7c !important;
+}
+#gameContainer .boss-stage-7 .boss-fixed-theme .board .cell.boss-stage-cell[data-boss-value="64"],
+#gameContainer .boss-stage-7 .boss-fixed-theme .board .cell.boss-stage-cell[data-boss-value="128"],
+#gameContainer .boss-stage-7 .boss-fixed-theme .board .cell.boss-stage-cell[data-boss-value="256"] {
+  background: linear-gradient(135deg,#efcc75,#f7e1a1) !important;
+}
+/* Hazards must stay legible on both sides, independent of game color theme. */
+#gameContainer .boss-stage-7 .board .cell.boss-stage-cell[data-boss-kind="lock"],
+body[data-achievement-theme] #gameContainer .boss-stage-7 .board .cell.boss-stage-cell[data-boss-kind="lock"] {
+  background: #40546a !important; color:#fff !important;
+}
+#gameContainer .boss-stage-7 .board .cell.boss-stage-cell[data-boss-kind="shield"],
+body[data-achievement-theme] #gameContainer .boss-stage-7 .board .cell.boss-stage-cell[data-boss-kind="shield"] {
+  background: #416e91 !important; color:#fff !important;
+}
+#gameContainer .boss-stage-7 .board .cell.boss-stage-cell[data-boss-kind="curse"],
+body[data-achievement-theme] #gameContainer .boss-stage-7 .board .cell.boss-stage-cell[data-boss-kind="curse"] {
+  background: #603767 !important; color:#fff !important;
+}
+#gameContainer .boss-stage-7 .board .cell.boss-stage-cell[data-boss-kind="laser"],
+body[data-achievement-theme] #gameContainer .boss-stage-7 .board .cell.boss-stage-cell[data-boss-kind="laser"] {
+  background: #a16e39 !important; color:#fff !important;
+}
+#gameContainer .boss-stage-7 .board .cell.boss-stage-cell[data-boss-kind="bomb"],
+body[data-achievement-theme] #gameContainer .boss-stage-7 .board .cell.boss-stage-cell[data-boss-kind="bomb"] {
+  background: #4d484f !important; color:#fff !important;
+}
+#gameContainer .boss-stage-7 .boss-fixed-theme .boss-timer-track {
+  background: #53465e !important;
+}
+#gameContainer .boss-stage-7 .boss-fixed-theme .boss-state-label,
+#gameContainer .boss-stage-7 .boss-mobile-status {
+  border-color:#bda16c !important;
+  background:#342943 !important;
+  color:#ffecbe !important;
+}
+#gameContainer .boss-stage-7 .boss-mobile-status {
+  box-shadow: 0 2px 7px rgba(0,0,0,.12);
+}
+@keyframes bossRagePulseV25 {
+  0%,100% { box-shadow:0 0 0 2px rgba(218,166,88,.48),0 9px 26px rgba(22,17,34,.2); }
+  50% { box-shadow:0 0 0 4px rgba(241,197,104,.85),0 9px 29px rgba(22,17,34,.24); }
+}
+#gameContainer .boss-stage-7 .boss-fixed-theme.boss-rage-active,
+#gameContainer .boss-stage-7 .boss-mobile-status.boss-mobile-rage {
+  animation: bossRagePulseV25 .65s ease-in-out infinite !important;
+}
+#gameContainer .boss-stage-7 .boss-fixed-theme.boss-analysis-active {
+  box-shadow:0 0 0 3px rgba(155,134,207,.55),0 9px 25px rgba(22,17,34,.2) !important;
+}
+#gameContainer .boss-stage-7 .boss-fixed-theme.boss-charge-active {
+  box-shadow:0 0 0 3px rgba(230,195,118,.68),0 9px 25px rgba(22,17,34,.2) !important;
+}
+@media (prefers-reduced-motion:reduce) {
+  #gameContainer .boss-stage-7 .boss-fixed-theme.boss-rage-active,
+  #gameContainer .boss-stage-7 .boss-mobile-status.boss-mobile-rage {animation:none !important;}
+}
+
+/* V25: Mobile keeps the player board readable and shows a fixed boss-status card. */
+#gameContainer .boss-stage-7 .boss-mobile-summary {display:none;}
+#gameContainer .boss-stage-7 .boss-mobile-summary .mobile-opponent-score,
+#gameContainer .boss-stage-7 .boss-mobile-summary .boss-mobile-status {
+  color:#fff0d2 !important;
+}
+@media (max-width:700px) {
+  #gameContainer .boss-stage-7 .boss-mobile-summary {
+    display:flex !important;
+    flex-direction:column;
+    align-items:center;
+    box-sizing:border-box;
+    width:min(100%,330px);
+    padding:9px 12px;
+    gap:2px;
+    border-radius:12px;
+    border:1px solid #9f8855;
+    background:linear-gradient(135deg,#30263f,#211c31);
+  }
+  #gameContainer .boss-stage-7 .boss-mobile-summary .boss-mobile-status {
+    border:0 !important;
+    padding:4px 6px;
+    background:transparent !important;
+    box-shadow:none;
+    margin:0 !important;
+  }
+  #gameContainer .boss-stage-7 .boss-mobile-summary .mobile-opponent-score {
+    margin:0 !important;
+    font-weight:800;
+  }
+}
+/* Size every 5x5 track from its column width, not an intrinsic fixed row height. */
+#gameContainer .boss-stage-7 .board.board-ai-5 {
+  width:min(100%,454px) !important;
+  height:auto !important;
+  aspect-ratio:auto !important;
+  box-sizing:border-box !important;
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  grid-template-rows:repeat(5,auto) !important;
+  gap:6px !important;
+  padding:10px !important;
+  min-width:0;
+  min-height:0;
+}
+#gameContainer .boss-stage-7 .board.board-ai-5 .cell {
+  box-sizing:border-box !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  width:100% !important;
+  height:auto !important;
+  aspect-ratio:1 !important;
+}
+@media(max-width:700px) {
+  #gameContainer .boss-stage-7 .board.board-ai-5 {
+    width:min(100%,320px) !important;
+    gap:3px !important;
+    padding:7px !important;
+  }
+}
