@@ -309,8 +309,8 @@ socket.on("roomError", message => {
       case 4: return 650;
       case 5: return 130 + 70 * level;
       case 6: return 70 + 35 * level;
-      case 7: return 1400;
-      case 8: return 2200;
+      case 7: return 1600;
+      case 8: return 2500;
       case 9: return 1700 * (level + 1) ** 2;
       case 10: return 2200 * (level + 1) ** 2;
       case 11: return 220;
@@ -13892,14 +13892,96 @@ function createAI7Side(name) {
   };
 }
 
+function isBossStage7_AI7() {
+  return !AI7.challengeMode;
+}
+
 function createAI7Layout() {
+  const isBossStage = isBossStage7_AI7();
+  const screen = document.createElement("div");
+  screen.style.width = "100%";
+  screen.style.minHeight = "100%";
+  screen.style.display = "flex";
+  screen.style.flexDirection = "column";
+  screen.style.alignItems = "center";
+  screen.style.justifyContent = "center";
+  screen.style.boxSizing = "border-box";
+  screen.style.padding = isBossStage ? "20px 18px 80px" : "0";
+  screen.style.gap = isBossStage ? "18px" : "0";
+  if (isBossStage) {
+    screen.style.background = "radial-gradient(circle at top, #2c1d1d 0%, #141414 48%, #090909 100%)";
+    screen.style.borderRadius = "18px";
+    screen.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,0.06)";
+  }
+
+  if (isBossStage) {
+    const intro = document.createElement("div");
+    intro.style.width = "min(1080px, 100%)";
+    intro.style.display = "flex";
+    intro.style.flexDirection = "column";
+    intro.style.alignItems = "center";
+    intro.style.gap = "8px";
+    intro.style.padding = "16px 18px";
+    intro.style.borderRadius = "18px";
+    intro.style.background = "linear-gradient(135deg, rgba(122,18,18,0.92), rgba(51,8,8,0.96))";
+    intro.style.boxShadow = "0 18px 30px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,215,140,0.25)";
+
+    const overline = document.createElement("div");
+    overline.textContent = "FINAL BOSS STAGE";
+    overline.style.color = "#ffd98b";
+    overline.style.fontWeight = "800";
+    overline.style.letterSpacing = "0.18em";
+    overline.style.fontSize = "clamp(11px, 2vw, 14px)";
+
+    const title = document.createElement("div");
+    title.textContent = "7-1 · BOSS RUSH";
+    title.style.color = "#fff7e0";
+    title.style.fontWeight = "900";
+    title.style.fontSize = "clamp(24px, 4vw, 38px)";
+    title.style.textAlign = "center";
+
+    const subtitle = document.createElement("div");
+    subtitle.textContent = "강화한 아이템으로 보스 AI를 돌파하세요";
+    subtitle.style.color = "rgba(255,245,224,0.88)";
+    subtitle.style.fontSize = "clamp(13px, 2.1vw, 16px)";
+    subtitle.style.textAlign = "center";
+
+    const meta = document.createElement("div");
+    meta.style.display = "flex";
+    meta.style.flexWrap = "wrap";
+    meta.style.justifyContent = "center";
+    meta.style.gap = "8px";
+    [
+      `목표 점수 ${AI7.TARGET}`,
+      `플레이 조건 타이머 Lv.${AI7.STAGE7_REQUIRED_TIMER_LEVEL}+`,
+      "이동마다 타일 2개 생성"
+    ].forEach(label => {
+      const badge = document.createElement("div");
+      badge.textContent = label;
+      badge.style.padding = "8px 12px";
+      badge.style.borderRadius = "999px";
+      badge.style.background = "rgba(255,255,255,0.1)";
+      badge.style.border = "1px solid rgba(255,217,139,0.25)";
+      badge.style.color = "#fff6e1";
+      badge.style.fontSize = "13px";
+      badge.style.fontWeight = "700";
+      meta.appendChild(badge);
+    });
+
+    intro.append(overline, title, subtitle, meta);
+    screen.appendChild(intro);
+  }
+
   const wrapper = document.createElement("div");
   wrapper.style.display = "flex";
   wrapper.style.width = "100%";
-  wrapper.style.height = "100%";
+  wrapper.style.height = isBossStage ? "auto" : "100%";
+  wrapper.style.justifyContent = "center";
+  wrapper.style.alignItems = "stretch";
+  wrapper.style.gap = isBossStage ? "18px" : "0";
 
-  const left = createAI7Panel("내 화면");
-  const right = createAI7Panel("상대 화면");
+  const left = createAI7Panel(isBossStage ? "도전자" : "내 화면", "player");
+  const right = createAI7Panel(isBossStage ? "BOSS" : "상대 화면", "boss");
 
   AI7.playerScoreText = left.scoreText;
   AI7.aiScoreText = right.scoreText;
@@ -13917,10 +13999,15 @@ function createAI7Layout() {
   mobileAIScore.className = "mobile-opponent-score";
   mobileAIScore.textContent = right.scoreText.textContent;
   left.panel.insertBefore(mobileAIScore, left.boardDiv);
+  if (isBossStage) {
+    mobileAIScore.style.color = "#ffd7a1";
+    mobileAIScore.style.fontWeight = "800";
+  }
   new MutationObserver(() => { mobileAIScore.textContent = right.scoreText.textContent; })
     .observe(right.scoreText, { childList: true, characterData: true, subtree: true });
 
-  gameContainer.appendChild(wrapper);
+  screen.appendChild(wrapper);
+  gameContainer.appendChild(screen);
 
   AI7.resultText = document.createElement("div");
   AI7.resultText.style.position = "fixed";
@@ -13933,6 +14020,10 @@ function createAI7Layout() {
   AI7.resultText.style.zIndex = "50";
   AI7.resultText.style.fontWeight = "bold";
   AI7.resultText.style.display = "none";
+  AI7.resultText.style.padding = isBossStage ? "18px 20px" : "0";
+  AI7.resultText.style.borderRadius = isBossStage ? "18px" : "0";
+  AI7.resultText.style.background = isBossStage ? "rgba(11, 11, 11, 0.88)" : "transparent";
+  AI7.resultText.style.boxShadow = isBossStage ? "0 18px 36px rgba(0,0,0,0.38)" : "none";
   gameContainer.appendChild(AI7.resultText);
 
   createBackButton(() => {
@@ -13948,31 +14039,55 @@ function createAI7Layout() {
   }, gameContainer);
 }
 
-function createAI7Panel(titleText) {
+function createAI7Panel(titleText, role = "player") {
+  const isBossStage = isBossStage7_AI7();
+  const isEnemy = role === "boss";
   const panel = document.createElement("div");
-  panel.style.width = "50%";
+  panel.style.width = isBossStage ? "min(520px, 100%)" : "50%";
+  panel.style.flex = isBossStage ? "1 1 0" : "0 0 50%";
   panel.style.height = "100%";
   panel.style.display = "flex";
   panel.style.flexDirection = "column";
   panel.style.alignItems = "center";
   panel.style.justifyContent = "center";
-  panel.style.gap = "10px";
-  panel.style.borderRight = titleText === "내 화면" ? "4px solid #81c784" : "none";
+  panel.style.gap = isBossStage ? "12px" : "10px";
+  panel.style.borderRight = !isBossStage && titleText === "내 화면" ? "4px solid #81c784" : "none";
+  panel.style.padding = isBossStage ? "20px 16px 18px" : "0";
+  panel.style.boxSizing = "border-box";
+  if (isBossStage) {
+    panel.style.borderRadius = "20px";
+    panel.style.background = isEnemy
+      ? "linear-gradient(180deg, rgba(95,20,20,0.96), rgba(38,10,10,0.96))"
+      : "linear-gradient(180deg, rgba(22,64,63,0.96), rgba(11,35,34,0.96))";
+    panel.style.boxShadow = isEnemy
+      ? "0 18px 36px rgba(0,0,0,0.32), inset 0 0 0 1px rgba(255,170,120,0.16)"
+      : "0 18px 36px rgba(0,0,0,0.26), inset 0 0 0 1px rgba(167,255,239,0.12)";
+  }
 
   const title = document.createElement("div");
-  title.textContent = titleText;
-  title.style.color = "#1b5e20";
-  title.style.fontSize = "26px";
+  title.textContent = isBossStage ? (isEnemy ? `👑 ${titleText}` : `🛡️ ${titleText}`) : titleText;
+  title.style.color = isBossStage ? (isEnemy ? "#ffe0b2" : "#d7fff8") : "#1b5e20";
+  title.style.fontSize = isBossStage ? "28px" : "26px";
   title.style.fontWeight = "bold";
 
+  const subText = document.createElement("div");
+  if (isBossStage) {
+    subText.textContent = isEnemy ? "압도적인 보스 개체" : "강화 아이템으로 공략";
+    subText.style.color = isEnemy ? "rgba(255,232,212,0.82)" : "rgba(223,255,250,0.82)";
+    subText.style.fontSize = "14px";
+    subText.style.fontWeight = "700";
+  }
+
   const scoreText = document.createElement("div");
-  scoreText.style.color = "#1b5e20";
-  scoreText.style.fontSize = "22px";
+  scoreText.style.color = isBossStage ? (isEnemy ? "#fff2e6" : "#f0fffb") : "#1b5e20";
+  scoreText.style.fontSize = isBossStage ? "21px" : "22px";
   scoreText.style.fontWeight = "bold";
 
   const targetText = document.createElement("div");
-  targetText.textContent = "목표: " + AI7.TARGET;
-  targetText.style.color = "#1b5e20";
+  targetText.textContent = isBossStage
+    ? (isEnemy ? `보스 목표: ${AI7.TARGET}` : `도전자 목표: ${AI7.TARGET}`)
+    : "목표: " + AI7.TARGET;
+  targetText.style.color = isBossStage ? (isEnemy ? "#ffd8bd" : "#d6fff8") : "#1b5e20";
   targetText.style.fontSize = "18px";
   targetText.style.fontWeight = "bold";
 
@@ -13980,12 +14095,24 @@ function createAI7Panel(titleText) {
   boardDiv.className = AI7.SIZE === 4 ? "board board-4" : "board board-ai-5";
   boardDiv.style.gridTemplateColumns = `repeat(${AI7.SIZE}, 80px)`;
   boardDiv.style.gridTemplateRows = `repeat(${AI7.SIZE}, 80px)`;
+  if (isBossStage) {
+    boardDiv.style.gap = "12px";
+    boardDiv.style.padding = "14px";
+    boardDiv.style.borderRadius = "22px";
+    boardDiv.style.background = isEnemy ? "rgba(0,0,0,0.22)" : "rgba(0,0,0,0.18)";
+    boardDiv.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,0.06)";
+  }
 
   const timerBox = document.createElement("div");
   timerBox.style.width = `${AI7.SIZE * 80}px`;
-  timerBox.style.height = "20px";
-  timerBox.style.background = "#ccc";
+  timerBox.style.height = isBossStage ? "22px" : "20px";
+  timerBox.style.background = isBossStage ? "rgba(255,255,255,0.12)" : "#ccc";
   timerBox.style.marginTop = "10px";
+  timerBox.style.borderRadius = isBossStage ? "999px" : "0";
+  timerBox.style.overflow = "hidden";
+  if (isBossStage) {
+    timerBox.style.boxShadow = "inset 0 0 0 1px rgba(255,255,255,0.1)";
+  }
 
   const timerBar = document.createElement("div");
   timerBar.style.height = "100%";
@@ -13995,30 +14122,36 @@ function createAI7Panel(titleText) {
 
   timerBox.appendChild(timerBar);
   const itemPanel = document.createElement("div");
-itemPanel.classList.add("game-item-panel-inline");
-itemPanel.style.display = "flex";
-itemPanel.style.gap = "10px";
-itemPanel.style.marginTop = "15px";
+  itemPanel.classList.add("game-item-panel-inline");
+  itemPanel.style.display = "flex";
+  itemPanel.style.gap = "10px";
+  itemPanel.style.marginTop = "15px";
+  if (isBossStage) {
+    itemPanel.style.padding = "10px 12px";
+    itemPanel.style.borderRadius = "16px";
+    itemPanel.style.background = "rgba(255,255,255,0.06)";
+  }
 
-if (titleText === "내 화면") {
-  AI7.player.slotDivs = [
-    createSlot_AI7(),
-    createSlot_AI7(),
-    createSlot_AI7()
-  ];
+  if (role === "player") {
+    AI7.player.slotDivs = [
+      createSlot_AI7(),
+      createSlot_AI7(),
+      createSlot_AI7()
+    ];
 
-  AI7.player.slotDivs.forEach(slot => itemPanel.appendChild(slot));
-}
+    AI7.player.slotDivs.forEach(slot => itemPanel.appendChild(slot));
+  }
 
   panel.appendChild(title);
+  if (isBossStage) panel.appendChild(subText);
   panel.appendChild(scoreText);
   panel.appendChild(targetText);
   panel.appendChild(boardDiv);
   panel.appendChild(timerBox);
 
-  if (titleText === "내 화면") {
-  panel.appendChild(itemPanel);
-}
+  if (role === "player") {
+    panel.appendChild(itemPanel);
+  }
 
   return { panel, scoreText, boardDiv, timerBar };
 }
@@ -15000,14 +15133,91 @@ function drawAI7() {
   drawSide_AI7(AI7.player, AI7.playerBoardDiv);
   drawSide_AI7(AI7.ai, AI7.aiBoardDiv);
 
-  AI7.playerScoreText.textContent =
-    `플레이어 Score: ${AI7.player.score} / 턴: ${AI7.player.turnCount}`;
+  if (isBossStage7_AI7()) {
+    AI7.playerScoreText.textContent =
+      `도전자 Score: ${AI7.player.score} / 남은 턴: ${AI7.player.turnCount}`;
 
-  AI7.aiScoreText.textContent =
-    `AI Score: ${AI7.ai.score} / 턴: ${AI7.ai.turnCount}`;
+    AI7.aiScoreText.textContent =
+      `BOSS Score: ${AI7.ai.score} / 남은 턴: ${AI7.ai.turnCount}`;
+  } else {
+    AI7.playerScoreText.textContent =
+      `플레이어 Score: ${AI7.player.score} / 턴: ${AI7.player.turnCount}`;
+
+    AI7.aiScoreText.textContent =
+      `AI Score: ${AI7.ai.score} / 턴: ${AI7.ai.turnCount}`;
+  }
 
   updateTimerUI_AI7();
   updateSlotUI_AI7();
+}
+
+function getStage7TileStyle_AI7(value, side) {
+  const enemy = !!side?.isAI;
+  const palette = [
+    [2, enemy ? "linear-gradient(135deg, #5f2a2a, #823737)" : "linear-gradient(135deg, #1b4f4b, #25786f)", "#fff5ef"],
+    [4, enemy ? "linear-gradient(135deg, #703232, #984241)" : "linear-gradient(135deg, #1e605c, #2f8d83)", "#fff6f0"],
+    [8, enemy ? "linear-gradient(135deg, #8a3b2a, #c4613a)" : "linear-gradient(135deg, #2a7262, #3eb19a)", "#fff8f1"],
+    [16, enemy ? "linear-gradient(135deg, #a64f22, #e1813d)" : "linear-gradient(135deg, #35816e, #56c3a9)", "#fffdf6"],
+    [32, enemy ? "linear-gradient(135deg, #be6920, #f0a344)" : "linear-gradient(135deg, #419481, #73d9be)", "#101616"],
+    [64, enemy ? "linear-gradient(135deg, #ce821d, #ffcb53)" : "linear-gradient(135deg, #59a891, #9aeed7)", "#111616"],
+    [128, enemy ? "linear-gradient(135deg, #c38c17, #ffe07a)" : "linear-gradient(135deg, #5fb4a0, #b6f6e7)", "#111616"]
+  ];
+  let bg = enemy ? "linear-gradient(135deg, #d4a514, #ffe89f)" : "linear-gradient(135deg, #8adfcb, #d6fff5)";
+  let color = "#111";
+  for (const [limit, candidateBg, candidateColor] of palette) {
+    if (value <= limit) {
+      bg = candidateBg;
+      color = candidateColor;
+      break;
+    }
+  }
+  return { bg, color };
+}
+
+function applyStage7CellTheme_AI7(cell, side, value, kind) {
+  if (!isBossStage7_AI7()) return;
+  const enemy = !!side?.isAI;
+  cell.style.width = "80px";
+  cell.style.height = "80px";
+  cell.style.borderRadius = "16px";
+  cell.style.fontWeight = "800";
+  cell.style.boxSizing = "border-box";
+  cell.style.border = enemy ? "1px solid rgba(255,208,170,0.18)" : "1px solid rgba(193,255,244,0.18)";
+  cell.style.boxShadow = "0 8px 16px rgba(0,0,0,0.18)";
+
+  if (kind === "lock") {
+    cell.style.background = "linear-gradient(135deg, #33424f, #465765)";
+    cell.style.color = "#f5fbff";
+    return;
+  }
+  if (kind === "shield") {
+    cell.style.background = "linear-gradient(135deg, #355c7d, #5fb3ff)";
+    cell.style.color = "#f7fcff";
+    return;
+  }
+  if (kind === "curse") {
+    cell.style.background = "linear-gradient(135deg, #3b2456, #6a36a1)";
+    cell.style.color = "#fff5ff";
+    return;
+  }
+  if (kind === "laser") {
+    cell.style.background = "linear-gradient(135deg, #5f3f20, #c67d1f)";
+    cell.style.color = "#fff8ea";
+    return;
+  }
+  if (kind === "bomb") {
+    cell.style.background = "linear-gradient(135deg, #4a4a4a, #1f1f1f)";
+    cell.style.color = "#fff";
+    return;
+  }
+  if (!value) {
+    cell.style.background = enemy ? "rgba(111, 34, 34, 0.36)" : "rgba(31, 91, 83, 0.36)";
+    cell.style.color = enemy ? "rgba(255,228,210,0.45)" : "rgba(218,255,247,0.45)";
+    return;
+  }
+  const theme = getStage7TileStyle_AI7(value, side);
+  cell.style.background = theme.bg;
+  cell.style.color = theme.color;
 }
 
 function drawSide_AI7(side, boardDiv) {
@@ -15026,13 +15236,15 @@ function drawSide_AI7(side, boardDiv) {
       const shieldHere = side.shields?.some(s => s.x === i && s.y === j);
       const curseHere = side.curseBombs?.some(c => c.x === i && c.y === j);
 
-      if (lockHere) cell.textContent = "🔒";
-else if (shieldHere) cell.textContent = "🛡️";
-else if (curseHere) cell.textContent = "💀";
-else if (laserHere) cell.textContent = "🔫";
-else if (bombHere) cell.textContent = "💣";
-else cell.textContent = side.board[i][j] || "";
+      let kind = "tile";
+      if (lockHere) { cell.textContent = "🔒"; kind = "lock"; }
+      else if (shieldHere) { cell.textContent = "🛡️"; kind = "shield"; }
+      else if (curseHere) { cell.textContent = "💀"; kind = "curse"; }
+      else if (laserHere) { cell.textContent = "🔫"; kind = "laser"; }
+      else if (bombHere) { cell.textContent = "💣"; kind = "bomb"; }
+      else cell.textContent = side.board[i][j] || "";
 
+      applyStage7CellTheme_AI7(cell, side, side.board[i][j], kind);
       boardDiv.appendChild(cell);
     }
   }
@@ -15072,6 +15284,17 @@ function updateOneTimer_AI7(side, bar) {
     : 0;
 
   bar.style.width = percent + "%";
+
+  if (isBossStage7_AI7()) {
+    if (percent < 30) {
+      bar.style.background = side?.isAI ? "linear-gradient(90deg, #ff6f61, #ff3d3d)" : "linear-gradient(90deg, #ff8a65, #ff5252)";
+    } else if (percent < 60) {
+      bar.style.background = side?.isAI ? "linear-gradient(90deg, #ffb74d, #ff7043)" : "linear-gradient(90deg, #ffd54f, #ffb300)";
+    } else {
+      bar.style.background = side?.isAI ? "linear-gradient(90deg, #ffcc80, #ff8f00)" : "linear-gradient(90deg, #5eead4, #14b8a6)";
+    }
+    return;
+  }
 
   if (percent < 30) bar.style.background = "#f44336";
   else if (percent < 60) bar.style.background = "#ff9800";
