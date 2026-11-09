@@ -14,7 +14,11 @@ require("./backup-api").attachBackupRoutes(app);
 const path = require("node:path");
 const publicFiles = [
   "index.html", "script.js", "game.js", "mobile.js", "ai-worker.js",
-  "achievements.js", "achievements.css", "backup.js", "backup.css"
+  "achievements.js", "achievements.css", "backup.js", "backup.css",
+  "boss-ai-worker.js", "boss-ai-rules.js", "boss-ai-weights.js",
+  "boss-ntuple.js", "boss-realrules-7000.f32.gz",
+  "boss-ntuple-v11.js", "boss-realrules-40000-v11.f32.gz",
+  "boss-obstacle-v8.js", "boss-obstacle-v8-weights.js"
 ];
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
 for (const filename of publicFiles) {
