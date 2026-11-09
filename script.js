@@ -13729,7 +13729,15 @@ const AI7 = {
   aiThinking: false,
   aiRequestId: 0,
   aiTimeout: null,
-  challengeStatus: null
+  challengeStatus: null,
+  // 7-1 보스전 전용: 8-1/9-1의 일정한 이동 주기는 유지한다.
+  bossMoveTimeout: null,
+  bossScheduleVersion: 0,
+  bossMode: "normal",
+  bossDelayMs: 0,
+  bossStatusText: null,
+  bossMobileStatusText: null,
+  bossPanel: null
 };
 
 function initGame_7_1() {
@@ -13898,13 +13906,15 @@ function isBossStage7_AI7() {
 
 function createAI7Layout() {
   const isBossStage = isBossStage7_AI7();
+  gameContainer.classList.toggle("boss-stage-active", isBossStage);
   const screen = document.createElement("div");
+  if (isBossStage) screen.classList.add("boss-stage-7");
   screen.style.width = "100%";
-  screen.style.minHeight = "100%";
+  screen.style.minHeight = isBossStage ? "auto" : "100%";
   screen.style.display = "flex";
   screen.style.flexDirection = "column";
   screen.style.alignItems = "center";
-  screen.style.justifyContent = "center";
+  screen.style.justifyContent = isBossStage ? "flex-start" : "center";
   screen.style.boxSizing = "border-box";
   screen.style.padding = isBossStage ? "20px 18px 80px" : "0";
   screen.style.gap = isBossStage ? "18px" : "0";
@@ -13916,6 +13926,7 @@ function createAI7Layout() {
 
   if (isBossStage) {
     const intro = document.createElement("div");
+    intro.className = "boss-stage-header";
     intro.style.width = "min(1080px, 100%)";
     intro.style.display = "flex";
     intro.style.flexDirection = "column";
@@ -13947,6 +13958,7 @@ function createAI7Layout() {
     subtitle.style.textAlign = "center";
 
     const meta = document.createElement("div");
+    meta.className = "boss-intro-badges";
     meta.style.display = "flex";
     meta.style.flexWrap = "wrap";
     meta.style.justifyContent = "center";
@@ -13999,6 +14011,20 @@ function createAI7Layout() {
   mobileAIScore.className = "mobile-opponent-score";
   mobileAIScore.textContent = right.scoreText.textContent;
   left.panel.insertBefore(mobileAIScore, left.boardDiv);
+  if (isBossStage) {
+    AI7.bossPanel = right.panel;
+    AI7.bossStatusText = right.bossStatusText;
+    const mobileStatus = document.createElement("div");
+    mobileStatus.className = "boss-mobile-status";
+    mobileStatus.setAttribute("role", "status");
+    mobileStatus.textContent = "👑 보스 준비 중";
+    left.panel.insertBefore(mobileStatus, left.boardDiv);
+    AI7.bossMobileStatusText = mobileStatus;
+  } else {
+    AI7.bossPanel = null;
+    AI7.bossStatusText = null;
+    AI7.bossMobileStatusText = null;
+  }
   if (isBossStage) {
     mobileAIScore.style.color = "#ffd7a1";
     mobileAIScore.style.fontWeight = "800";
@@ -14078,6 +14104,13 @@ function createAI7Panel(titleText, role = "player") {
     subText.style.fontWeight = "700";
   }
 
+  const bossStatusText = document.createElement("div");
+  if (isBossStage && isEnemy) {
+    bossStatusText.className = "boss-state-label";
+    bossStatusText.setAttribute("role", "status");
+    bossStatusText.textContent = "👑 보스 준비 중";
+  }
+
   const scoreText = document.createElement("div");
   scoreText.style.color = isBossStage ? (isEnemy ? "#fff2e6" : "#f0fffb") : "#1b5e20";
   scoreText.style.fontSize = isBossStage ? "21px" : "22px";
@@ -14105,6 +14138,7 @@ function createAI7Panel(titleText, role = "player") {
 
   const timerBox = document.createElement("div");
   timerBox.style.width = `${AI7.SIZE * 80}px`;
+  if (isBossStage) timerBox.className = "boss-timer-track";
   timerBox.style.height = isBossStage ? "22px" : "20px";
   timerBox.style.background = isBossStage ? "rgba(255,255,255,0.12)" : "#ccc";
   timerBox.style.marginTop = "10px";
@@ -14144,6 +14178,7 @@ function createAI7Panel(titleText, role = "player") {
 
   panel.appendChild(title);
   if (isBossStage) panel.appendChild(subText);
+  if (isBossStage && isEnemy) panel.appendChild(bossStatusText);
   panel.appendChild(scoreText);
   panel.appendChild(targetText);
   panel.appendChild(boardDiv);
@@ -14153,7 +14188,7 @@ function createAI7Panel(titleText, role = "player") {
     panel.appendChild(itemPanel);
   }
 
-  return { panel, scoreText, boardDiv, timerBar };
+  return { panel, scoreText, boardDiv, timerBar, bossStatusText };
 }
 
 function handleKey_7_1(e) {
@@ -14235,26 +14270,130 @@ function updateSlotUI_AI7() {
   }
 }
 
-// 8-1/9-1: 레벨 1=1300ms, 레벨 100=600ms. 7-1은 기존 2000ms 유지.
+// 8-1/9-1: 레벨 1=1300ms, 레벨 100=600ms. 7-1은 별도 보스 스케줄러.
 function getAIDelay_AI7(level) {
   const n = Math.max(1, Math.min(100, Number(level) || 1));
   return Math.round(1300 - (n - 1) * 700 / 99);
 }
 
-function startAITimer_AI7() {
-  clearInterval(AI7.aiInterval);
-  const delay = AI7.challengeMode ? getAIDelay_AI7(AI7.difficulty) : 2000;
-  AI7.aiInterval = setInterval(() => {
-    if (AI7.ended || AI7.aiThinking) return;
-    if (AI7.challengeMode && AI7.difficulty >= 61) {
-      requestExpectimax_AI7();
+const BOSS7_MODES = Object.freeze({
+  normal:   {label:"일반",    icon:"⚔️", minMs:800,  maxMs:2500},
+  rage:     {label:"폭주",    icon:"🔥", minMs:300,  maxMs:800},
+  analysis: {label:"분석",    icon:"🧠", minMs:2500, maxMs:6000},
+  charge:   {label:"충전",    icon:"⚡", minMs:6000, maxMs:18500}
+});
+
+// 기본 가중치 55/25/17/3. 점수 차이와 보드의 위험도에 따라 보스가 적응한다.
+function selectBossMode_AI7(randomValue = Math.random()) {
+  const weights = {normal:55, rage:25, analysis:17, charge:3};
+  const player = AI7.player;
+  const boss = AI7.ai;
+  if (player && boss) {
+    const playerThreat = player.score > boss.score + 250 || player.score >= AI7.TARGET * 0.78;
+    const bossFinisher = boss.score >= AI7.TARGET * 0.8;
+    const cramped = countEmpty_AI7(boss.board) <= 5;
+    if (playerThreat || bossFinisher) {
+      weights.normal -= 15;
+      weights.rage += 23;
+      weights.analysis -= 6;
+      weights.charge -= 2;
+    }
+    if (cramped) {
+      weights.normal -= 18;
+      weights.rage -= 4;
+      weights.analysis += 24;
+      weights.charge -= 2;
+    }
+  }
+  // 매우 긴 충전 행동이 연속되는 일을 방지한다.
+  if (AI7.bossMode === "charge") {
+    weights.normal += weights.charge;
+    weights.charge = 0;
+  }
+  const entries = Object.entries(weights).map(([mode, weight]) => [mode, Math.max(0, weight)]);
+  const sum = entries.reduce((total, [, weight]) => total + weight, 0);
+  let roll = Math.max(0, Math.min(0.999999, Number(randomValue) || 0)) * sum;
+  for (const [mode, weight] of entries) {
+    if (roll < weight) return mode;
+    roll -= weight;
+  }
+  return "normal";
+}
+
+function getBossDelay_AI7(mode, randomValue = Math.random()) {
+  const config = BOSS7_MODES[mode] || BOSS7_MODES.normal;
+  const roll = Math.max(0, Math.min(1, Number(randomValue) || 0));
+  // AI 고정 타이머 20초: 지연/탭 스케줄링 오차를 고려해 1.5초 여유를 둔다.
+  return Math.min(18500, Math.round(config.minMs + (config.maxMs - config.minMs) * roll));
+}
+
+function setBossModeUI_AI7(mode, delayMs) {
+  const config = BOSS7_MODES[mode] || BOSS7_MODES.normal;
+  const message = `${config.icon} ${config.label} 상태 · 다음 이동 약 ${(delayMs / 1000).toFixed(1)}초`;
+  if (AI7.bossStatusText) AI7.bossStatusText.textContent = message;
+  if (AI7.bossMobileStatusText) {
+    AI7.bossMobileStatusText.textContent = message;
+    AI7.bossMobileStatusText.classList.toggle("boss-mobile-rage", mode === "rage");
+  }
+  if (AI7.bossPanel) {
+    AI7.bossPanel.classList.toggle("boss-rage-active", mode === "rage");
+    AI7.bossPanel.classList.toggle("boss-analysis-active", mode === "analysis");
+    AI7.bossPanel.classList.toggle("boss-charge-active", mode === "charge");
+  }
+}
+
+function cancelBossMove_AI7() {
+  clearTimeout(AI7.bossMoveTimeout);
+  AI7.bossMoveTimeout = null;
+  AI7.bossScheduleVersion++;
+}
+
+function scheduleBossMove_AI7() {
+  cancelBossMove_AI7();
+  if (AI7.ended || !isBossStage7_AI7() || !AI7.ai) return;
+  const mode = selectBossMode_AI7();
+  const delayMs = getBossDelay_AI7(mode);
+  AI7.bossMode = mode;
+  AI7.bossDelayMs = delayMs;
+  setBossModeUI_AI7(mode, delayMs);
+  const token = AI7.bossScheduleVersion;
+  AI7.bossMoveTimeout = setTimeout(() => {
+    AI7.bossMoveTimeout = null;
+    if (token !== AI7.bossScheduleVersion || AI7.ended || !isBossStage7_AI7()) return;
+    // Worker 계산이 아직 진행 중인 경우 중복 이동 요청을 보내지 않는다.
+    if (AI7.aiThinking) {
+      AI7.bossMoveTimeout = setTimeout(() => {
+        if (token === AI7.bossScheduleVersion && !AI7.ended && isBossStage7_AI7()) scheduleBossMove_AI7();
+      }, 150);
+      return;
+    }
+    if (mode === "analysis" || mode === "charge") {
+      // 분석/충전 행동: 실제 제한시간 Expectimax를 사용한다. 학습형 모델은 다음 단계.
+      requestExpectimax_AI7(mode === "charge" ? 95 : 85);
     } else {
       aiMove_AI7();
     }
+    // 다음 일정은 실제 이동 완료 후 makeMove_AI7에서 예약한다.
+  }, delayMs);
+}
+
+function startAITimer_AI7() {
+  clearInterval(AI7.aiInterval);
+  cancelBossMove_AI7();
+  if (isBossStage7_AI7()) {
+    scheduleBossMove_AI7();
+    return;
+  }
+  const delay = getAIDelay_AI7(AI7.difficulty);
+  AI7.aiInterval = setInterval(() => {
+    if (AI7.ended || AI7.aiThinking) return;
+    if (AI7.difficulty >= 61) requestExpectimax_AI7();
+    else aiMove_AI7();
   }, delay);
 }
 
 function stopAIThinking_AI7() {
+  cancelBossMove_AI7();
   AI7.aiRequestId++;
   AI7.aiThinking = false;
   clearTimeout(AI7.aiTimeout);
@@ -14342,6 +14481,7 @@ function makeMove_AI7(dir) {
     resetTimer_AI7(AI7.ai);
     drawAI7();
     checkResult_AI7();
+    if (!AI7.ended && isBossStage7_AI7()) scheduleBossMove_AI7();
   }
 }
 
@@ -14351,7 +14491,9 @@ function aiMove_AI7() {
     finishAI7("WIN!", "상대 이동 불가!");
     return;
   }
-  const selected = selectFallback_AI7(candidates, AI7.challengeMode ? AI7.difficulty : 30);
+  // 7-1 보스는 기존 쉬운 AI 대신 가중치 평가를 기본으로 사용한다.
+  // N-Tuple 학습 모델은 별도 단계에서 추가한다.
+  const selected = selectFallback_AI7(candidates, AI7.challengeMode ? AI7.difficulty : 70);
   makeMove_AI7(selected.dir);
 }
 
@@ -14366,10 +14508,11 @@ function getSpawnDistribution_AI7(side = AI7.ai) {
   return [[2,0.9],[4,0.1]];
 }
 
-function requestExpectimax_AI7() {
+function requestExpectimax_AI7(levelOverride = null) {
+  const searchLevel = levelOverride == null ? AI7.difficulty : Math.max(61, Math.min(100, Number(levelOverride) || 85));
   const candidates = getMoveCandidates_AI7();
   if (!candidates.length) { finishAI7('WIN!', '상대 이동 불가!'); return; }
-  const fallback = selectFallback_AI7(candidates, AI7.difficulty);
+  const fallback = selectFallback_AI7(candidates, searchLevel);
   // Web Worker가 막혔거나 생성 실패 시 가중치 AI로 즉시 대체한다.
   if (typeof Worker === 'undefined') { makeMove_AI7(fallback.dir); return; }
   if (!AI7.aiWorker) {
@@ -14385,7 +14528,7 @@ function requestExpectimax_AI7() {
   });
   AI7.aiThinking = true;
   const mobile = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
-  const budgetMs = Math.round((mobile ? 20 : 35) + (AI7.difficulty-61)*(mobile ? 20 : 35)/39);
+  const budgetMs = Math.round((mobile ? 20 : 35) + (searchLevel-61)*(mobile ? 20 : 35)/39);
   let completed = false;
   function complete(index) {
     if (completed) return;
@@ -14402,7 +14545,7 @@ function requestExpectimax_AI7() {
     // 그 사이 상대방의 아이템/방해물로 보드가 바뀌었다면 재검증한다.
     const latestCandidates = now === snapshot ? candidates : getMoveCandidates_AI7();
     if (!latestCandidates.length) { finishAI7('WIN!', '상대 이동 불가!'); return; }
-    const chosen = latestCandidates.find(c => c.index === index) || selectFallback_AI7(latestCandidates, AI7.difficulty);
+    const chosen = latestCandidates.find(c => c.index === index) || selectFallback_AI7(latestCandidates, searchLevel);
     makeMove_AI7(chosen.dir);
   }
   worker.onmessage = e => {
@@ -14421,7 +14564,7 @@ function requestExpectimax_AI7() {
     // 현재 이동은 실제 게임 시뮬레이션 결과를 사용하며,
     // 이후 확률 노드에서 실제 규칙대로 타일을 두 개 생성한다.
     worker.postMessage({
-      id:requestId, level:AI7.difficulty, budgetMs, spawn:getSpawnDistribution_AI7(AI7.ai),
+      id:requestId, level:searchLevel, budgetMs, spawn:getSpawnDistribution_AI7(AI7.ai),
       mergeBonus:getScoreBonus_AI7(AI7.ai),
       // 특수 장애물이 있으면 다음 턴의 단순 격자 추론을 제한한다.
       special: !!(AI7.ai.locks.length || AI7.ai.shields.length || AI7.ai.bombs.length ||

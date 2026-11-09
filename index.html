@@ -758,6 +758,78 @@
  #gameContainer .mobile-multi-info { gap:2px 8px !important; }
 }
 
+
+/* V23: 7-1 보스전 헤더/카드 스크롤 및 가독성 */
+#gameContainer.boss-stage-active:not(.hidden) {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 12px 64px;
+  box-sizing: border-box;
+}
+#gameContainer .boss-stage-7 { max-width: 1190px; margin: 0 auto; }
+#gameContainer .boss-stage-header { flex: 0 0 auto; box-sizing: border-box; }
+#gameContainer .boss-intro-badges { max-width:100%; }
+#gameContainer .boss-intro-badges > div { flex: 0 0 auto; white-space: nowrap; }
+#gameContainer .boss-stage-7 .game-item-panel-inline { position: static !important; inset: auto !important; transform: none !important; flex-direction: row !important; width: auto !important; margin: 6px auto 0 !important; }
+@media (max-width: 700px) {
+  #gameContainer.boss-stage-active:not(.hidden) { padding: 10px 8px 28px !important; }
+  #gameContainer .boss-stage-7 { padding: 8px 7px 16px !important; gap: 10px !important; }
+  #gameContainer .boss-stage-header { padding: 14px 10px !important; }
+  #gameContainer .boss-intro-badges { gap: 6px !important; }
+  #gameContainer .boss-intro-badges > div { font-size: 11px !important; padding: 6px 9px !important; }
+  #gameContainer .boss-stage-7 .ai-my-side {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: min-content !important;
+    padding: 14px 8px 18px !important;
+  }
+  #gameContainer .boss-stage-7 .ai-my-side .board { margin: 6px auto !important; }
+  #gameContainer .boss-stage-7 .boss-timer-track { width: min(100%, 320px) !important; flex-shrink:0; }
+}
+
+/* V23: 7-1 보스 AI 상태 표시. 8/9 AI 대전 및 멀티에는 적용하지 않음. */
+#gameContainer .boss-state-label,
+#gameContainer .boss-mobile-status {
+  box-sizing: border-box;
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 208, 151, .35);
+  border-radius: 999px;
+  background: rgba(22, 10, 10, .55);
+  color: #fff5dd;
+  font-size: clamp(12px, 1.6vw, 15px);
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.45;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+#gameContainer .boss-mobile-status { display: none; }
+@keyframes bossRagePulse {
+  0%,100% { box-shadow: 0 0 0 2px rgba(255,88,67,.32), 0 14px 34px rgba(0,0,0,.30); }
+  50% { box-shadow: 0 0 0 5px rgba(255,90,45,.8), 0 18px 45px rgba(232,42,29,.25); }
+}
+#gameContainer .boss-rage-active,
+#gameContainer .boss-mobile-rage { animation: bossRagePulse .58s ease-in-out infinite; }
+#gameContainer .boss-analysis-active { box-shadow: 0 0 0 3px rgba(139,178,255,.65), 0 16px 38px rgba(0,0,0,.34) !important; }
+#gameContainer .boss-charge-active { box-shadow: 0 0 0 3px rgba(255,206,101,.75), 0 16px 38px rgba(0,0,0,.34) !important; }
+@media (max-width:700px) {
+  #gameContainer .boss-mobile-status { display: block !important; width: min(100%, 330px); margin: 2px auto 7px !important; }
+  #gameContainer .boss-stage-7 .board.board-ai-5 {
+    width: min(100%, 320px) !important;
+    height: auto !important;
+    aspect-ratio: 1;
+    box-sizing: border-box !important;
+    padding: 7px !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(5, minmax(0, 1fr)) !important;
+    gap: 5px !important;
+  }
+  #gameContainer .boss-stage-7 .board.board-ai-5 .cell { width:100% !important; height:100% !important; min-width:0 !important; min-height:0 !important; }
+}
+
 </style>
   <!-- 업적 전용 화면 및 꾸미기 스타일 -->
   <link rel="stylesheet" href="achievements.css?v=20">
@@ -816,7 +888,7 @@
   <!-- JS는 무조건 마지막 -->
   <script src="achievements.js?v=20"></script>
   <script src="backup.js?v=19"></script>
-  <script src="script.js?v=20"></script>
+  <script src="script.js?v=23"></script>
   <script src="mobile.js"></script>
   
 

@@ -69,6 +69,8 @@
     const known = [...game.querySelectorAll('.game-item-panel, .game-item-panel-inline, .mobile-item-row')];
     const slotCandidates = [...game.querySelectorAll('div')].filter(el => {
       if (el === game || el.classList.contains('board') || el.closest('.board')) return false;
+      // 보스 헤더의 3개 안내 배지는 아이템 슬롯이 아니다.
+      if (el.closest('.boss-stage-header')) return false;
       if (el.closest('.multi-enemy-side, .ai-enemy-side')) return false;
       if (known.includes(el)) return false;
       if (el.children.length !== 3) return false;
@@ -91,6 +93,17 @@
   function positionDesktopItems() {
     const panels = [...game.querySelectorAll('.game-item-panel, .game-item-panel-inline')]
       .filter(p => !p.closest('.multi-enemy-side, .ai-enemy-side'));
+    // 7-1 보스전은 강화된 패널 안에서 아이템 슬롯을 보이도록 유지한다.
+    // 기존의 공통 PC 슬롯 고정 배치가 보스 카드와 겹치지 않게 한다.
+    if (game.classList.contains('boss-stage-active')) {
+      panels.forEach(p => {
+        if (p.dataset.desktopSlotAnchor === '1') {
+          ['position','left','right','top','bottom','transform','flex-direction','z-index'].forEach(k => p.style.removeProperty(k));
+          delete p.dataset.desktopSlotAnchor;
+        }
+      });
+      return;
+    }
     if (mobile.matches) {
       panels.forEach(p => {
         if (p.dataset.desktopSlotAnchor === '1') {
@@ -140,7 +153,11 @@
       const rows = rowMatch ? Number(rowMatch[1]) : cols;
       // Fit BOTH axes. 7x11 and other tall boards must not exceed mobile viewport.
       const availableHeight = Math.max(170, window.innerHeight * (rows > 7 ? .39 : rows > 5 ? .40 : .43));
-      const width = Math.max(125, Math.min(window.innerWidth - 28, 350, availableHeight * cols / rows));
+      const bossBoard = board.closest('.boss-stage-7');
+      const layoutCap = bossBoard
+        ? Math.max(125, Math.min(window.innerWidth - 50, board.parentElement?.clientWidth - 20 || 320, 320))
+        : 350;
+      const width = Math.max(125, Math.min(window.innerWidth - 28, layoutCap, availableHeight * cols / rows));
       const gap = Math.max(3, Math.min(7, Math.floor(width / (cols * 12))));
       const side = Math.floor((width - gap * (cols - 1)) / cols);
       board.style.setProperty('grid-template-columns', `repeat(${cols}, minmax(0, 1fr))`, 'important');
