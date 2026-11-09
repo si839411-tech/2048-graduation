@@ -739,6 +739,104 @@ function showSubStages(stageNum) {
   if (window.GameBackup?.mount) window.GameBackup.mount(backupPanel);
   else backupPanel.textContent = "백업 기능을 불러오지 못했습니다. 페이지를 새로고침해 주세요.";
   optionContainer.appendChild(backupPanel);
+
+  // 게임 관리 기능은 상점에서 분리하여 옵션에 모아 둔다.
+  // 코인/구매/업적 기록은 기존 localStorage 키를 그대로 사용하여 백업과 호환한다.
+  const management = document.createElement("section");
+  management.className = "option-game-management";
+  const managementTitle = document.createElement("h2");
+  managementTitle.textContent = "⚙️ 게임 관리";
+  const managementDescription = document.createElement("p");
+  managementDescription.textContent = "테스트·시연용 기능입니다. 중요한 기록은 먼저 백업해 주세요.";
+  const managementCoin = document.createElement("p");
+  managementCoin.className = "option-management-coins";
+  const managementGrid = document.createElement("div");
+  managementGrid.className = "option-management-grid";
+  const managementStatus = document.createElement("p");
+  managementStatus.className = "option-management-status";
+  managementStatus.setAttribute("role", "status");
+  managementStatus.setAttribute("aria-live", "polite");
+  managementStatus.textContent = "아이템 초기화는 스테이지와 업적 기록을 유지합니다.";
+
+  function createManagementButton(id, label, handler) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.id = id;
+    button.className = "option-management-button";
+    button.textContent = label;
+    button.addEventListener("click", handler);
+    managementGrid.appendChild(button);
+    return button;
+  }
+  function updateManagementInfo() {
+    managementCoin.textContent = `현재 코인: ${coin.toLocaleString()}개`;
+    if (achievementButton) {
+      achievementButton.textContent = window.Achievements?.isAtInitialState?.()
+        ? "🏆 업적 전체 완료" : "🏆 업적 초기화";
+    }
+  }
+
+  createManagementButton("optionsShopReset", "🔄 상점 초기화", () => {
+    if (!confirm("상점 구매 내역을 지우고 코인을 120개로 초기화할까요?\n스테이지와 업적 기록은 유지됩니다.")) return;
+    const itemKeys = [
+      "item1Count", "item2Count", "item3", "item4", "item5Count", "item6Count",
+      "item7", "item8", "item9Count", "item10Count", "item11", "item12",
+      "item13Count", "item14Count", "item15", "item16Count"
+    ];
+    itemKeys.forEach(key => localStorage.removeItem(key));
+    coin = STARTING_COINS;
+    localStorage.setItem("coin", String(coin));
+    window.Achievements?.refresh();
+    managementStatus.textContent = "아이템과 코인을 초기화했어. 스테이지·업적 기록은 유지돼.";
+    updateManagementInfo();
+  });
+
+  createManagementButton("optionsUnlockAll", "🔓 모든 스테이지 언락", () => {
+    if (!confirm("1-1부터 9-1까지 23개 스테이지를 모두 해금할까요?")) return;
+    const allStages = [];
+    for (let main = 1; main <= 9; main++) {
+      const subCount = main <= 4 ? 4 : (main <= 6 ? 2 : 1);
+      for (let sub = 1; sub <= subCount; sub++) allStages.push(`${main}-${sub}`);
+    }
+    localStorage.setItem("unlocked", JSON.stringify(allStages));
+    unlocked = allStages;
+    window.Achievements?.onStagesChanged();
+    managementStatus.textContent = "23개 스테이지를 모두 해금했어.";
+    updateManagementInfo();
+  });
+
+  createManagementButton("optionsCoinBonus", "🪙 코인 획득 (+1,000)", () => {
+    // 서명 백업의 코인 저장 범위와 동일하게 제한한다.
+    if (coin > 1_000_000_000_000 - 1000) {
+      managementStatus.textContent = "코인 저장 한도에 도달했어.";
+      return;
+    }
+    coin += 1000;
+    localStorage.setItem("coin", String(coin));
+    managementStatus.textContent = "+1,000코인 지급 완료!";
+    updateManagementInfo();
+  });
+
+  const achievementButton = createManagementButton("optionsAchievementToggle", "🏆 업적 초기화", () => {
+    if (!window.Achievements?.toggleResetOrComplete) {
+      managementStatus.textContent = "업적 기능을 불러올 수 없어. 새로고침해 줘.";
+      return;
+    }
+    const initial = window.Achievements.isAtInitialState();
+    const message = initial
+      ? "초기 상태인 업적 8개를 전부 달성 완료 처리할까요?\n테마 8종이 모두 해금됩니다."
+      : "업적 기록을 초기 상태(0/8)로 되돌릴까요?\n선택한 테마는 기본으로 돌아가고, 코인·아이템·스테이지는 유지됩니다.\n초기 상태에서 이 버튼을 다시 누르면 업적을 전부 완료할 수 있습니다.";
+    if (!confirm(message)) return;
+    const result = window.Achievements.toggleResetOrComplete();
+    managementStatus.textContent = result === "complete"
+      ? "업적 8개를 모두 달성 처리했어. 테마 8종이 해금됐어."
+      : "업적을 0/8로 초기화했어. 현재 코인과 스테이지는 그대로야.";
+    updateManagementInfo();
+  });
+
+  management.append(managementTitle, managementDescription, managementCoin, managementGrid, managementStatus);
+  optionContainer.appendChild(management);
+  updateManagementInfo();
 }
 
 
@@ -747,20 +845,11 @@ function showSubStages(stageNum) {
   function showShop() {
 
     function setShopState(item, enabled) {
-  if (enabled) {
-    item.style.background = "#a5d6a7";
-    item.style.color = "#1b5e20";
-    item.style.opacity = "1";
-    item.style.pointerEvents = "auto";
-    item.style.cursor = "pointer";
-  } else {
-    item.style.background = "#ccc";
-    item.style.color = "#666";
-    item.style.opacity = "1";
-    item.style.pointerEvents = "none";
-    item.style.cursor = "not-allowed";
-  }
-}
+      item.classList.toggle("shop-item--disabled", !enabled);
+      item.setAttribute("aria-disabled", String(!enabled));
+      item.tabIndex = enabled ? 0 : -1;
+      item.style.pointerEvents = enabled ? "auto" : "none";
+    }
 
 
     shopContainer.classList.remove("hidden");
@@ -770,63 +859,6 @@ function showSubStages(stageNum) {
     coinText.className = "coin-display";
     coinText.textContent = "Coin: " + coin;
     shopContainer.appendChild(coinText);
-
-    const resetBtn = document.createElement("div");
-resetBtn.className = "shop-item";
-resetBtn.textContent = "상점 초기화";
-
-resetBtn.onclick = () => {
-  if (!confirm("아이템 구매 내역을 모두 지우고 코인을 120으로 초기화할까요?\n(스테이지 해금 기록은 유지됩니다)")) return;
-
-  const keys = [
-    "item1Count",
-    "item2Count",
-    "item3",
-    "item4",
-    "item5Count",
-    "item6Count",
-    "item7",
-    "item8",
-    "item9Count",
-    "item10Count",
-    "item11",
-    "item12",
-    "item13Count",
-    "item14Count",
-    "item15",
-    "item16Count"
-  ];
-
-  keys.forEach(key => localStorage.removeItem(key));
-  coin = STARTING_COINS;
-localStorage.setItem("coin", coin);
-
-  showShop();
-};
-
-shopContainer.appendChild(resetBtn);
-
-// 테스트 및 시연용: 모든 스테이지 해금
-const unlockAllBtn = document.createElement("div");
-unlockAllBtn.className = "shop-item";
-unlockAllBtn.textContent = "모든 스테이지 언락";
-unlockAllBtn.onclick = () => {
-  if (!confirm("모든 스테이지(1-1 ~ 9-1)를 해금할까요?")) return;
-
-  const allStages = [];
-  for (let main = 1; main <= 9; main++) {
-    const subCount = main <= 4 ? 4 : (main <= 6 ? 2 : 1);
-    for (let sub = 1; sub <= subCount; sub++) {
-      allStages.push(`${main}-${sub}`);
-    }
-  }
-  localStorage.setItem("unlocked", JSON.stringify(allStages));
-  unlocked = allStages;
-  window.Achievements?.onStagesChanged();
-  alert("모든 23개 스테이지가 해금되었습니다.");
-  showShop();
-};
-shopContainer.appendChild(unlockAllBtn);
 
     createBackButton(() => {
       shopContainer.classList.add("hidden");
@@ -842,21 +874,6 @@ shopContainer.appendChild(unlockAllBtn);
     shopContainer.appendChild(grid);
 
     // ================= 공통 함수 =================
-function setShopState(item, enabled) {
-  if (enabled) {
-    item.style.background = "#a5d6a7";
-    item.style.color = "#1b5e20";
-    item.style.opacity = "1";
-    item.style.pointerEvents = "auto";
-    item.style.cursor = "pointer";
-  } else {
-    item.style.background = "#ccc";
-    item.style.color = "#666";
-    item.style.opacity = "1";
-    item.style.pointerEvents = "none";
-    item.style.cursor = "not-allowed";
-  }
-}
 
 function hasStage(stageKey) {
   const unlocked = JSON.parse(localStorage.getItem("unlocked")) || ["1-1"];
@@ -927,6 +944,13 @@ const item16 = document.createElement("div");
   item13, item14, item15, item16
 ].forEach(item => {
   item.className = "shop-item";
+  item.setAttribute("role", "button");
+  item.addEventListener("keydown", (event) => {
+    if ((event.key === "Enter" || event.key === " ") && item.getAttribute("aria-disabled") !== "true") {
+      event.preventDefault();
+      item.click();
+    }
+  });
   grid.appendChild(item);
 });
 

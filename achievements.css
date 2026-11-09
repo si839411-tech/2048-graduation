@@ -313,3 +313,54 @@ body[data-achievement-theme] #gameContainer .board .cell.cell-wall {
   text-shadow: 0 1px 2px rgba(0, 0, 0, .8);
   pointer-events: none;
 }
+
+
+/* V20: 16개 상점 아이템 테마/가독성. 밝은 테마·어두운 테마 모두 고대비 표시. */
+#shopContainer.shop-container { background: var(--ui-bg, #e8f5e9); }
+#shopContainer > .shop-items-grid > .shop-item {
+  box-sizing: border-box;
+  padding: 6px 5px;
+  min-width: 0;
+  border: 2px solid var(--shop-item-border, var(--ui-border, #77b18b));
+  border-radius: 10px;
+  background: var(--shop-item-bg, var(--ui-surface, #c4e7cb));
+  color: var(--shop-item-ink, var(--ui-text, #184b28));
+  box-shadow: 0 3px 8px rgba(0,0,0,.15);
+  font: 750 clamp(11px, 1.1vw, 14px)/1.26 system-ui, -apple-system, "Malgun Gothic", sans-serif;
+  text-align: center;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  cursor: pointer;
+  transition: transform .15s ease, background-color .15s ease;
+}
+#shopContainer > .shop-items-grid > .shop-item:hover:not(.shop-item--disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+}
+#shopContainer > .shop-items-grid > .shop-item:focus-visible {
+  outline: 3px solid var(--ui-accent, #228e55);
+  outline-offset: 2px;
+}
+#shopContainer > .shop-items-grid > .shop-item.shop-item--disabled {
+  background: var(--shop-item-disabled-bg, #dae6dd);
+  color: var(--shop-item-disabled-ink, #3c5544);
+  border-style: dashed;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+body[data-achievement-theme="pastel"] { --shop-item-bg: #fff8fd; --shop-item-ink: #603049; --shop-item-disabled-bg: #e1d3dc; --shop-item-disabled-ink: #654c59; }
+body[data-achievement-theme="ocean"] { --shop-item-bg: #f5fcff; --shop-item-ink: #10506a; --shop-item-disabled-bg: #c3dce7; --shop-item-disabled-ink: #31586b; }
+body[data-achievement-theme="neon"] { --shop-item-bg: #41346c; --shop-item-ink: #ffffff; --shop-item-disabled-bg: #3d3758; --shop-item-disabled-ink: #ddd3ed; }
+body[data-achievement-theme="ember"] { --shop-item-bg: #fff8ed; --shop-item-ink: #713315; --shop-item-disabled-bg: #eddacd; --shop-item-disabled-ink: #744d3a; }
+body[data-achievement-theme="cyber"] { --shop-item-bg: #243b52; --shop-item-ink: #e7ffff; --shop-item-disabled-bg: #283242; --shop-item-disabled-ink: #d0e4e6; }
+body[data-achievement-theme="diamond"] { --shop-item-bg: #fcffff; --shop-item-ink: #1a526c; --shop-item-disabled-bg: #d9eaf2; --shop-item-disabled-ink: #435e6f; }
+body[data-achievement-theme="gold"] { --shop-item-bg: #4b3820; --shop-item-ink: #fff4d6; --shop-item-disabled-bg: #41372b; --shop-item-disabled-ink: #e6d3aa; }
+body[data-achievement-theme="rainbow"] { --shop-item-bg: #fffaff; --shop-item-ink: #642b68; --shop-item-disabled-bg: #eeddf0; --shop-item-disabled-ink: #66506d; }
+@media(max-width:700px) {
+  #shopContainer > .shop-items-grid > .shop-item {
+    padding: 8px 4px;
+    min-height: 82px;
+    font-size: clamp(11px, 3vw, 13px);
+  }
+}

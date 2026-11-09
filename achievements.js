@@ -57,11 +57,12 @@
         best8: number(value.best8),
         best9: number(value.best9),
         completed: value.completed && typeof value.completed === 'object' ? value.completed : {},
-        theme: typeof value.theme === 'string' ? value.theme : 'classic'
+        theme: typeof value.theme === 'string' ? value.theme : 'classic',
+        postReset: value.postReset === true
       };
     } catch (_) {
       return {firstPlayed: false, cleared14: false, spentCoins: 0,
-        best8: 0, best9: 0, completed: {}, theme: 'classic'};
+        best8: 0, best9: 0, completed: {}, theme: 'classic', postReset: false};
     }
   }
   let state = load();
@@ -77,13 +78,13 @@
   function progress(id) {
     switch (id) {
       case 'first': return {value: state.firstPlayed ? 1 : 0, max: 1};
-      case 'clear14': return {value: state.cleared14 || stageUnlocked('2-1') ? 1 : 0, max: 1};
-      case 'unlock81': return {value: stageUnlocked('8-1') ? 1 : 0, max: 1};
+      case 'clear14': return {value: state.cleared14 || (!state.postReset && stageUnlocked('2-1')) ? 1 : 0, max: 1};
+      case 'unlock81': return {value: state.postReset ? (isComplete('unlock81') ? 1 : 0) : (stageUnlocked('8-1') ? 1 : 0), max: 1};
       case 'level925': return {value: Math.min(25, state.best9), max: 25};
       case 'level950': return {value: Math.min(50, state.best9), max: 50};
       case 'both100': return {value: (state.best8 >= 100 ? 1 : 0) + (state.best9 >= 100 ? 1 : 0), max: 2};
       case 'spent100k': return {value: Math.min(SPENDING_GOAL, state.spentCoins), max: SPENDING_GOAL};
-      case 'allMax': return {value: getShopMaxCount(), max: 16};
+      case 'allMax': return {value: state.postReset ? (isComplete('allMax') ? 16 : 0) : getShopMaxCount(), max: 16};
       default: return {value: 0, max: 1};
     }
   }
@@ -103,7 +104,13 @@
     setTimeout(() => { toast.remove(); nextToast(); }, 2800);
   }
   function ensureThemeButton() {
-    if (!menuNode || !isComplete('first') || menuNode.querySelector('#themeMenuBtn')) return;
+    if (!menuNode) return;
+    if (!isComplete('first')) {
+      menuNode.querySelector('#themeMenuBtn')?.remove();
+      if (openDialogNode?.type === 'themes') closeDialog();
+      return;
+    }
+    if (menuNode.querySelector('#themeMenuBtn')) return;
     const button = document.createElement('div');
     button.className = 'block';
     button.id = 'themeMenuBtn';
@@ -118,8 +125,10 @@
   }
   function check(silent = false) {
     // 이전 버전에서 얻은 8-1 해금 및 8-1의 현재 난이도는 이어받는다.
-    state.best8 = Math.max(state.best8, Math.min(100, storedNumber('ai8Difficulty')));
-    if (stageUnlocked('2-1')) state.cleared14 = true;
+    if (!state.postReset) {
+      state.best8 = Math.max(state.best8, Math.min(100, storedNumber('ai8Difficulty')));
+      if (stageUnlocked('2-1')) state.cleared14 = true;
+    }
     let changed = false;
     ACHIEVEMENTS.forEach((achievement) => {
       const p = progress(achievement.id);
@@ -313,6 +322,38 @@
     }
   });
 
+  function initialAchievementState() {
+    return ACHIEVEMENTS.every(achievement => !isComplete(achievement.id)) &&
+      ACHIEVEMENTS.every(achievement => progress(achievement.id).value === 0);
+  }
+  function toggleResetOrComplete() {
+    if (initialAchievementState()) {
+      // 시연용 전체 달성. 실제 구매 수량이나 스테이지 상태를 조작하지 않는다.
+      state = {
+        firstPlayed: true, cleared14: true, spentCoins: SPENDING_GOAL,
+        best8: 100, best9: 100,
+        completed: Object.fromEntries(ACHIEVEMENTS.map(a => [a.id, true])),
+        theme: 'classic', postReset: true
+      };
+      save();
+      ensureThemeButton();
+      applyTheme();
+      renderAchievements(document.getElementById('achievementScreenGrid'));
+      if (openDialogNode) renderCurrentDialog();
+      return 'complete';
+    }
+    // 이전의 코인·아이템·스테이지·AI 난이도 저장값은 그대로 둔다.
+    // postReset 모드에서는 과거 기록만으로 업적이 즉시 재달성되지 않는다.
+    state = {firstPlayed: false, cleared14: false, spentCoins: 0,
+      best8: 0, best9: 0, completed: {}, theme: 'classic', postReset: true};
+    save();
+    ensureThemeButton();
+    applyTheme();
+    renderAchievements(document.getElementById('achievementScreenGrid'));
+    if (openDialogNode) renderCurrentDialog();
+    return 'reset';
+  }
+
   window.Achievements = {
     init(menu) {
       menuNode = menu;
@@ -339,7 +380,14 @@
       if (main === 1 && sub === 4) { state.cleared14 = true; save(); }
       check();
     },
-    onStagesChanged() { check(); },
+    onStagesChanged() {
+      // 초기화 이후 새 해금 이벤트에서만 해당 업적을 다시 달성한다.
+      if (state.postReset && stageUnlocked('8-1')) {
+        state.completed.unlock81 = true;
+        save();
+      }
+      check();
+    },
     onDifficulty(mode, difficulty) {
       const level = Math.min(100, number(difficulty));
       if (mode === 8) state.best8 = Math.max(state.best8, level);
@@ -351,10 +399,13 @@
     onPurchase(amount) {
       if (!Number.isFinite(amount) || amount <= 0) return;
       state.spentCoins += amount;
+      if (state.postReset && getShopMaxCount() >= 16) state.completed.allMax = true;
       save();
       check();
     },
     refresh() { check(); },
+    isAtInitialState: initialAchievementState,
+    toggleResetOrComplete,
     getSummary() {
       return {spentCoins: state.spentCoins, best8: state.best8, best9: state.best9,
         completed: {...state.completed}, allMaxCount: getShopMaxCount(), theme: state.theme};

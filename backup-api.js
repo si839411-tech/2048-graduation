@@ -58,11 +58,15 @@ function validateAchievements(text) {
     }
     safe.completed = completed;
   }
+  if (Object.hasOwn(data, 'postReset')) {
+    if (typeof data.postReset !== 'boolean') throw new Error('업적 초기화 상태가 올바르지 않습니다.');
+    safe.postReset = data.postReset;
+  }
   if (Object.hasOwn(data, 'theme')) {
     if (!THEMES.has(data.theme)) throw new Error('알 수 없는 테마입니다.');
     safe.theme = data.theme;
   }
-  if (Object.keys(data).some(key => !['firstPlayed','cleared14','spentCoins','best8','best9','completed','theme'].includes(key))) {
+  if (Object.keys(data).some(key => !['firstPlayed','cleared14','spentCoins','best8','best9','completed','theme','postReset'].includes(key))) {
     throw new Error('지원하지 않는 업적 기록입니다.');
   }
   return JSON.stringify(safe);
