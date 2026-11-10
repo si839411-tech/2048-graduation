@@ -27,7 +27,14 @@
   toolbar.className = 'mobile-game-toolbar';
   function organizeControls() {
     if (!mobile.matches || game.classList.contains('hidden')) return;
-    if (toolbar.parentElement !== game) game.appendChild(toolbar);
+    if (toolbar.parentElement !== game) {
+      // Replacing #gameContainer detaches the old mobile toolbar, but the
+      // toolbar node still holds its previous stage's back button. Discard
+      // that stale handler before mounting it into a new game (e.g. after
+      // leaving multiplayer and starting a single-player stage).
+      toolbar.querySelectorAll('.back-btn, .multi-back-btn').forEach(btn => btn.remove());
+      game.appendChild(toolbar);
+    }
     // Only one back control on mobile. Prefer the latest stage-created control,
     // retaining its original click handler; remove stale duplicates.
     const backs = [...game.querySelectorAll('.back-btn, .multi-back-btn')];
