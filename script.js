@@ -12,6 +12,17 @@ window.onload = function () {
 
   let playerId = localStorage.getItem("playerId");
   let currentRoomId = null;
+  // V16 multiplayer: a match popup is dismissed for BOTH players when either accepts.
+  let pendingMatchConfirmation = false;
+  const MULTI_THEMES = new Set([
+    "classic", "pastel", "ocean", "neon", "ember", "cyber", "diamond", "gold", "rainbow"
+  ]);
+  function safeMultiTheme(theme) {
+    return MULTI_THEMES.has(theme) ? theme : "classic";
+  }
+  function myMultiTheme() {
+    return safeMultiTheme(window.Achievements?.getSummary()?.theme);
+  }
 
   let enemyBoard = null;
   let enemyScore = 0;
@@ -213,15 +224,63 @@ socket.on("matchError", message => {
   resetMultiUI();
 });
 
+// Browser alert() cannot be closed by a Socket.IO event from the other tab.
+// Use a non-blocking dialog and a room-wide confirmation broadcast instead.
+function closeMatchNotice(roomId) {
+  if (currentRoomId !== roomId) return;
+  document.getElementById("multiMatchFoundOverlay")?.remove();
+  if (pendingMatchConfirmation) {
+    pendingMatchConfirmation = false;
+    startTimer_M(); // Start both players' clocks only when the shared popup closes.
+    sendMyGameState();
+  }
+}
+
+socket.on("matchNoticeDismissed", data => {
+  closeMatchNotice(data?.roomId);
+});
+
+function showMatchNotice(data) {
+  document.getElementById("multiMatchFoundOverlay")?.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "multiMatchFoundOverlay";
+  overlay.className = "multi-match-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", "매칭 완료");
+
+  const panel = document.createElement("div");
+  panel.className = "multi-match-panel";
+  const title = document.createElement("h2");
+  title.textContent = "매칭 완료!";
+  const players = document.createElement("p");
+  players.textContent = (Array.isArray(data.players) ? data.players : []).map(String).join(" VS ");
+  const hint = document.createElement("p");
+  hint.textContent = "한 명이 확인하면 두 사람 모두 게임을 시작합니다.";
+  const confirmButton = document.createElement("button");
+  confirmButton.type = "button";
+  confirmButton.textContent = "확인";
+  confirmButton.onclick = () => {
+    // Close locally immediately; the server notifies the other room member.
+    socket.emit("acknowledgeMatchNotice", { roomId: data.roomId });
+    closeMatchNotice(data.roomId);
+  };
+  panel.append(title, players, hint, confirmButton);
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+  confirmButton.focus();
+}
+
 socket.on("matchFound", data => {
-  alert(data.players[0] + " VS " + data.players[1]);
+  if (!data || typeof data.roomId !== "string") return;
+  currentRoomId = data.roomId;
+  pendingMatchConfirmation = true;
 
   multiContainer.classList.add("hidden");
   gameContainer.classList.remove("hidden");
 
-  currentRoomId = data.roomId;
-
   initGame_M();
+  showMatchNotice(data);
   window.Achievements?.onGameStarted();
 });
 
@@ -284,7 +343,7 @@ socket.on("roomError", message => {
     "4-1": 900, "4-2": 1200, "4-3": 1500, "4-4": 1900,
     "5-1": 2000, "5-2": 2800,
     "6-1": 3000, "6-2": 4000,
-    "7-1": 40000, "8-1": 2200, "9-1": 2400,
+    "7-1": 20000, "8-1": 2200, "9-1": 2400,
     "multi": 3000
   });
   const STAGE_REWARDS = Object.freeze({
@@ -13739,42 +13798,8 @@ const AI7 = {
   bossRageCooldownUntil: 0,
   bossStatusText: null,
   bossMobileStatusText: null,
-  bossPanel: null,
-  bossForwardWorker: null,
-  playerLastMoveAt: 0,
-  playerMoveIntervals: [],
-  bossDiagnostics: {requests:0, responses:0, fallbacks:0, timeouts:0, errors:0, stale:0,
-    totalMs:0, maxMs:0, lastDecisions:[]}
+  bossPanel: null
 };
-
-// V10: Local debugging only. Does not send metrics to any server.
-window.getStage7BossDiagnostics = function () {
-  const d = AI7.bossDiagnostics;
-  return {
-    goal:AI7.TARGET,
-    maxMergeBonus:BOSS7_FIXED_MERGE_BONUS,
-    requests:d.requests, responses:d.responses, fallbacks:d.fallbacks,
-    timeouts:d.timeouts, errors:d.errors, stale:d.stale,
-    avgWorkerMs:d.responses ? Math.round(d.totalMs/d.responses*10)/10 : null,
-    maxWorkerMs:Math.round(d.maxMs*10)/10,
-    recent:d.lastDecisions.map(x=>({...x}))
-  };
-};
-function recordBossDecision_AI7(info) {
-  const d=AI7.bossDiagnostics;
-  d.responses++;
-  d.totalMs+=info.elapsedMs;
-  d.maxMs=Math.max(d.maxMs, info.elapsedMs);
-  if (info.reason!=='worker') d.fallbacks++;
-  if (info.reason==='timeout') d.timeouts++;
-  if (info.reason==='error' || info.reason==='post-error') d.errors++;
-  if (info.reason==='stale') d.stale++;
-  d.lastDecisions.push({mode:info.mode,reason:info.reason,
-    elapsedMs:Math.round(info.elapsedMs*10)/10,
-    completedSamples:info.completedSamples??null,
-    modelUsed:!!info.modelUsed});
-  if (d.lastDecisions.length>20) d.lastDecisions.shift();
-}
 
 function initGame_7_1() {
   AI7.SIZE = 5; // 7-1은 기존의 5×5를 유지
@@ -13802,10 +13827,6 @@ function initGame_7_1() {
   AI7.bossMode = "normal";
   AI7.bossRageEndsAt = 0;
   AI7.bossRageCooldownUntil = 0;
-  AI7.playerLastMoveAt = 0;
-  AI7.playerMoveIntervals = [];
-  AI7.bossDiagnostics = {requests:0,responses:0,fallbacks:0,timeouts:0,errors:0,
-    stale:0,totalMs:0,maxMs:0,lastDecisions:[]};
 
   AI7.player = createAI7Side("플레이어");
   AI7.ai = createAI7Side("AI");
@@ -13816,7 +13837,7 @@ function initGame_7_1() {
   addRandom_AI7(AI7.ai);
 
   // 플레이어에게만 구입한 시작 아이템을 적용한다.
-  // AI는 아이템1/5/9 MAX, 아이템7 생성, 타이머 700레벨을 고정 사용한다.
+  // AI는 아이템7/타이머 700레벨 사양을 고정 사용하며 상점을 참조하지 않는다.
   applyStartItems_AI7(AI7.player);
 
   createAI7Layout();
@@ -13856,13 +13877,7 @@ function shopEffectsEnabled_AI7(side) {
     !!side && !side.isAI;
 }
 
-// V10: fixed MAX upgrades for the 7-1 boss ONLY. No localStorage purchases.
-// item1 Lv.5 => +5; item5 Lv.10 => +100; item9 Lv.2 => +200 per merge.
-const BOSS7_FIXED_MERGE_BONUS = 5 + 10 * 10 + 2 * 100; // 305
 function getScoreBonus_AI7(side) {
-  if (AI7.challengeMode !== 8 && AI7.challengeMode !== 9 && side && side.isAI) {
-    return BOSS7_FIXED_MERGE_BONUS;
-  }
   if (!shopEffectsEnabled_AI7(side)) return 0;
   const bonus1 = Number(localStorage.getItem("item1Count")) || 0;
   const bonus5 = Number(localStorage.getItem("item5Count")) || 0;
@@ -14220,15 +14235,6 @@ function handleKey_7_1(e) {
   const moved = moveSide_AI7(AI7.player, dirMap[e.key]);
 
   if (moved) {
-    if (isBossStage7_AI7()) {
-      const now = Date.now();
-      const previous = AI7.playerLastMoveAt;
-      if (previous && now - previous >= 200 && now - previous <= 20000) {
-        AI7.playerMoveIntervals.push(now - previous);
-        if (AI7.playerMoveIntervals.length > 6) AI7.playerMoveIntervals.shift();
-      }
-      AI7.playerLastMoveAt = now;
-    }
     afterMove_AI7(AI7.player);
     resetTimer_AI7(AI7.player);
     drawAI7();
@@ -14418,9 +14424,11 @@ function scheduleBossMove_AI7() {
       }, 150);
       return;
     }
-    // V6 experimental worker: 7-1 normal/rage = rule-aware forward search,
-    // analysis/charge = existing Expectimax, with a local heuristic fallback.
-    requestBossForward_AI7(mode);
+    if (mode === "analysis" || mode === "charge") {
+      requestExpectimax_AI7(mode === "charge" ? 95 : 85);
+    } else {
+      aiMove_AI7();
+    }
     // 이동 완료 후 makeMove_AI7에서 같은 페이즈로 다음 행동을 예약한다.
   }, delayMs);
 }
@@ -14429,12 +14437,6 @@ function startAITimer_AI7() {
   clearInterval(AI7.aiInterval);
   cancelBossMove_AI7();
   if (isBossStage7_AI7()) {
-    // V13: initialize the rule Worker early, without downloading a model.
-    // Optional experimental model bytes load only when explicitly selected.
-    if (typeof Worker !== 'undefined' && !AI7.bossForwardWorker) {
-      try { AI7.bossForwardWorker = new Worker('boss-ai-worker.js?v=14'); }
-      catch (_) { AI7.bossForwardWorker = null; }
-    }
     scheduleBossMove_AI7();
     return;
   }
@@ -14455,10 +14457,6 @@ function stopAIThinking_AI7() {
   if (AI7.aiWorker) {
     AI7.aiWorker.terminate();
     AI7.aiWorker = null;
-  }
-  if (AI7.bossForwardWorker) {
-    AI7.bossForwardWorker.terminate();
-    AI7.bossForwardWorker = null;
   }
 }
 
@@ -14564,141 +14562,6 @@ function getSpawnDistribution_AI7(side = AI7.ai) {
   if (localStorage.getItem('item4')) return [[8,0.5],[16,0.3],[32,0.2]];
   if (localStorage.getItem('item3')) return [[4,0.5],[8,0.3],[16,0.2]];
   return [[2,0.9],[4,0.1]];
-}
-
-// 7-1 V6: standalone snapshot only; DOM elements cannot be posted to a worker.
-function serializeBossSide_AI7(side) {
-  return {
-    name:side.name, isAI:!!side.isAI,
-    board:side.board.map(row=>row.slice()),
-    score:side.score, turnCount:side.turnCount, timer:side.timer,
-    bombs:side.bombs.map(x=>({...x})), lasers:side.lasers.map(x=>({...x})),
-    locks:side.locks.map(x=>({...x})), shields:side.shields.map(x=>({...x})),
-    curseBombs:side.curseBombs.map(x=>({...x})),
-    itemSlots:side.itemSlots ? [...side.itemSlots] : [null,null,null],
-    slotDivs:[]
-  };
-}
-
-function bossSnapshot_AI7() {
-  // Both sides can change while a worker is searching (player item effects).
-  return JSON.stringify({
-    boss:serializeBossSide_AI7(AI7.ai),
-    player:serializeBossSide_AI7(AI7.player)
-  });
-}
-
-function getBossShopSnapshot_AI7() {
-  const shop = {};
-  for (const key of [
-    "item1Count", "item5Count", "item9Count", "item13Count",
-    "item3", "item4", "item7", "item8"
-  ]) shop[key] = localStorage.getItem(key);
-  return shop;
-}
-
-// Estimate only from successful earlier moves; no knowledge of future input.
-function getPlayerPaceEstimate_AI7() {
-  const history = AI7.playerMoveIntervals || [];
-  if (!history.length) return 2000;
-  const sorted = [...history].sort((a,b)=>a-b);
-  const median = sorted[Math.floor(sorted.length/2)];
-  // Long inactivity makes forecasts less confident, not artificially faster.
-  const elapsed = AI7.playerLastMoveAt ? Date.now()-AI7.playerLastMoveAt : 0;
-  return Math.max(300,Math.min(20000,Math.max(median,elapsed*0.75)));
-}
-
-function requestBossForward_AI7(mode = "normal") {
-  // This new path is scoped ONLY to 7-1. Challenge 8-1/9-1 continues unchanged.
-  if (AI7.ended || !isBossStage7_AI7() || !AI7.player || !AI7.ai) return;
-  const candidates = getMoveCandidates_AI7();
-  if (!candidates.length) {
-    finishAI7("WIN!", "상대 이동 불가!");
-    return;
-  }
-  const fallback = selectFallback_AI7(candidates,70);
-  function fallbackMove() {
-    if (!AI7.ended && isBossStage7_AI7()) makeMove_AI7(fallback.dir);
-  }
-  // Include direct fallback in diagnostics; otherwise unsupported browsers
-  // misleadingly report zero requests and zero fallbacks despite boss moves.
-  AI7.bossDiagnostics.requests++;
-  if (typeof Worker === "undefined") {
-    recordBossDecision_AI7({mode,reason:'worker-unavailable',elapsedMs:0});
-    fallbackMove();return;
-  }
-  if (!AI7.bossForwardWorker) {
-    try { AI7.bossForwardWorker = new Worker("boss-ai-worker.js?v=14"); }
-    catch (_) {
-      recordBossDecision_AI7({mode,reason:'worker-constructor',elapsedMs:0});
-      fallbackMove();return;
-    }
-  }
-  const worker=AI7.bossForwardWorker;
-  const id=++AI7.aiRequestId;
-  const startMs=performance.now();
-  const snapshot=bossSnapshot_AI7();
-  const isMobile=!!(window.matchMedia && window.matchMedia("(max-width: 700px)").matches);
-  const thinkingMode=mode === "analysis" || mode === "charge";
-  const budgetMs=thinkingMode ? (isMobile ? 35 : 65) : (isMobile ? 35 : 75);
-  const samples=isMobile ? 2 : 3;
-  AI7.aiThinking=true;
-  let finished=false;
-  function finish(index, reason='worker', metadata=null) {
-    if(finished)return;
-    finished=true;
-    clearTimeout(AI7.aiTimeout);
-    AI7.aiTimeout=null;
-    AI7.aiThinking=false;
-    if(AI7.ended || id!==AI7.aiRequestId || !AI7.ai || !isBossStage7_AI7())return;
-    // If the player changed either side during calculation, recompute safely.
-    const changed=bossSnapshot_AI7() !== snapshot;
-    const latest=changed ? getMoveCandidates_AI7() : candidates;
-    const validIndex=!changed && latest.some(x=>x.index===index);
-    const finalReason=changed?'stale':validIndex?reason:(reason==='worker'?'invalid-index':reason);
-    recordBossDecision_AI7({mode,reason:finalReason,
-      elapsedMs:Math.max(0,performance.now()-startMs),
-      completedSamples:metadata?.completedSamples,
-      modelUsed:metadata?.modelUsed});
-    if(!latest.length) {finishAI7("WIN!", "상대 이동 불가!"); return;}
-    const chosen=validIndex ? latest.find(x=>x.index===index) : selectFallback_AI7(latest,70);
-    makeMove_AI7(chosen.dir);
-  }
-  function terminateWorker() {
-    if(AI7.bossForwardWorker===worker){
-      worker.terminate(); AI7.bossForwardWorker=null;
-    }
-  }
-  worker.onmessage=(e)=>{
-    if(!e.data || e.data.id!==id)return;
-    if(e.data.error) terminateWorker();
-    finish(e.data.index,e.data.error?'error':'worker',e.data);
-  };
-  worker.onerror=()=>{terminateWorker();finish(null,'error');};
-  worker.onmessageerror=()=>{terminateWorker();finish(null,'error');};
-  // Bound both worker computation and startup/import delays.
-  AI7.aiTimeout=setTimeout(()=>{terminateWorker();finish(null,'timeout');},budgetMs+200);
-  try {
-    worker.postMessage({
-      id,mode,budgetMs,samples,target:AI7.TARGET,
-      // Default V6 is a safer reference until V8 passes independent validation.
-      // 'off'=V6; 'on'/'v7'=7k N-Tuple; 'v8'=N-Tuple+direct obstacle learner.
-      ntupleWeight:['on','v7','v8','v9','v11'].includes(localStorage.getItem('stage7BossModel')) ? 0.5 : 0,
-      modelVariant:localStorage.getItem('stage7BossModel') === 'v11' ? 'v11' : 'v7',
-      hazardWeight:['v8','v9'].includes(localStorage.getItem('stage7BossModel')) ? 0.3 : 0,
-      predictPlayerPace:localStorage.getItem('stage7BossModel') === 'v9',
-      playerDelayEstimateMs:getPlayerPaceEstimate_AI7(),
-      boss:serializeBossSide_AI7(AI7.ai),
-      player:serializeBossSide_AI7(AI7.player),
-      shop:getBossShopSnapshot_AI7(),
-      special:!!(AI7.ai.locks.length || AI7.ai.shields.length ||
-        AI7.ai.bombs.length || AI7.ai.lasers.length || AI7.ai.curseBombs.length ||
-        AI7.ai.turnCount<=1),
-      candidates:candidates.map(c=>({index:c.index,side:serializeBossSide_AI7(c.side)}))
-    });
-  } catch (_) {
-    terminateWorker();finish(null,'post-error');
-  }
 }
 
 function requestExpectimax_AI7(levelOverride = null) {
@@ -14914,46 +14777,46 @@ function mergeLine_AI7(side, line) {
   while (result.length < AI7.SIZE) result.push(0);
   return result;
 }
-// Locks are immovable barriers: neither the locked tile nor any tile on the
-// opposite side may pass through or merge with a lock.  Each unlocked run is
-// compressed and merged independently, while mobile shields remain entries.
-function mergeUnlockedEntries_AI7(side, entries) {
+function mergeEntries_AI7(side, entries) {
   const arr = entries.filter(e => e.value !== 0 || e.shield);
   const result = [];
+
   for (let i = 0; i < arr.length; i++) {
     const cur = arr[i];
     const next = arr[i + 1];
-    if (cur.value > 0 && next && next.value > 0 &&
-        cur.value === next.value && !cur.shield && !next.shield) {
+
+    if (
+      cur.value > 0 &&
+      next &&
+      next.value > 0 &&
+      cur.value === next.value &&
+      !cur.shield &&
+      !next.shield
+    ) {
       const merged = cur.value * 2;
-      result.push({value: merged, shield: false, lock: false,
-        oldX: cur.oldX, oldY: cur.oldY});
+
+      result.push({
+        value: merged,
+        shield: false,
+        oldX: cur.oldX,
+        oldY: cur.oldY
+      });
+
       side.score += merged + getScoreBonus_AI7(side);
       i++;
     } else {
       result.push(cur);
     }
   }
-  while (result.length < entries.length) {
-    result.push({value: 0, shield: false, lock: false});
-  }
-  return result;
-}
 
-function mergeEntries_AI7(side, entries) {
-  const result = [];
-  let start = 0;
-  for (let i = 0; i <= entries.length; i++) {
-    if (i !== entries.length && !entries[i].lock) continue;
-    result.push(...mergeUnlockedEntries_AI7(side, entries.slice(start, i)));
-    if (i < entries.length) result.push(entries[i]); // stays at its exact cell
-    start = i + 1;
+  while (result.length < AI7.SIZE) {
+    result.push({
+      value: 0,
+      shield: false
+    });
   }
-  return result;
-}
 
-function hasLock_AI7(side, x, y) {
-  return !!side.locks && side.locks.some(l => l.x === x && l.y === y);
+  return result;
 }
 
 function hasShield_AI7(side, x, y) {
@@ -14994,7 +14857,6 @@ function moveLeft_AI7(side) {
       line.push({
         value: side.board[i][j],
         shield: hasShield_AI7(side, i, j),
-        lock: hasLock_AI7(side, i, j),
         oldX: i,
         oldY: j
       });
@@ -15027,7 +14889,6 @@ function moveRight_AI7(side) {
       line.push({
         value: side.board[i][j],
         shield: hasShield_AI7(side, i, j),
-        lock: hasLock_AI7(side, i, j),
         oldX: i,
         oldY: j
       });
@@ -15062,7 +14923,6 @@ function moveUp_AI7(side) {
       line.push({
         value: side.board[i][j],
         shield: hasShield_AI7(side, i, j),
-        lock: hasLock_AI7(side, i, j),
         oldX: i,
         oldY: j
       });
@@ -15095,7 +14955,6 @@ function moveDown_AI7(side) {
       line.push({
         value: side.board[i][j],
         shield: hasShield_AI7(side, i, j),
-        lock: hasLock_AI7(side, i, j),
         oldX: i,
         oldY: j
       });
@@ -15268,8 +15127,13 @@ function afterMove_AI7(side) {
 }
 
 function addRandom_AI7(side) {
-  // A shield-only cell is visually empty but is NOT a free spawn slot.
-  const empty = getEmptyCells_AI7(side);
+  const empty = [];
+
+  for (let i = 0; i < AI7.SIZE; i++) {
+    for (let j = 0; j < AI7.SIZE; j++) {
+      if (side.board[i][j] === 0) empty.push([i, j]);
+    }
+  }
 
   if (empty.length === 0) return;
 
@@ -15454,12 +15318,8 @@ function getEmptyCells_AI7(side) {
     for (let j = 0; j < AI7.SIZE; j++) {
       const hasBomb = side.bombs.some(b => b.x === i && b.y === j);
       const hasLaser = side.lasers.some(l => l.x === i && l.y === j);
-      const hasShield = side.shields.some(s => s.x === i && s.y === j);
-      const hasLock = side.locks.some(l => l.x === i && l.y === j);
-      const hasCurse = side.curseBombs.some(c => c.x === i && c.y === j);
 
-      if (side.board[i][j] === 0 && !hasBomb && !hasLaser &&
-          !hasShield && !hasLock && !hasCurse) {
+      if (side.board[i][j] === 0 && !hasBomb && !hasLaser) {
         empty.push([i, j]);
       }
     }
@@ -16065,6 +15925,9 @@ socket.on("enemyGameResult", data => {
 });
 
 socket.on("receiveGameState", data => {
+  // The opponent's chosen theme is cosmetic and scoped to their panel only.
+  const enemyPanel = gameContainer.querySelector(".multi-enemy-side");
+  if (enemyPanel) enemyPanel.dataset.multiTheme = safeMultiTheme(data.theme);
   enemyBoard = data.board;
   enemyScore = data.score;
   enemyPlayerId = data.playerId;
@@ -16127,6 +15990,7 @@ function sendMyGameState() {
   socket.emit("sendGameState", {
     roomId: currentRoomId,
     playerId: playerId,
+    theme: myMultiTheme(),
     board: board,
     score: score,
     nextRandomItem: nextRandomItem,
@@ -16154,6 +16018,7 @@ battleWrapper.style.height = "100%";
 
 const mySide = document.createElement("div");
 mySide.classList.add("multi-my-side");
+mySide.dataset.multiTheme = myMultiTheme();
 mySide.style.width = "50%";
 mySide.style.height = "100%";
 mySide.style.display = "flex";
@@ -16165,6 +16030,7 @@ mySide.style.position = "relative";
 
 const enemySide = document.createElement("div");
 enemySide.classList.add("multi-enemy-side");
+enemySide.dataset.multiTheme = "classic"; // until the opponent's first game state arrives
 enemySide.style.width = "50%";
 enemySide.style.height = "100%";
 enemySide.style.display = "flex";
@@ -16298,6 +16164,8 @@ function startTimer_M() {
   isTimeOut = false;
 
   updateTimerUI_M();
+  // Neither side loses time while the synchronized match notice is displayed.
+  if (pendingMatchConfirmation) return;
 
   timerInterval_M = setInterval(() => {
     timer_M--;
@@ -16362,6 +16230,9 @@ function showBattleBackButton() {
 
   backBtn.onclick = () => {
     clearInterval(timerInterval_M);
+    pendingMatchConfirmation = false;
+    document.getElementById("multiMatchFoundOverlay")?.remove();
+    socket.emit("leaveRoom");
 
     currentRoomId = null;
 
@@ -16935,6 +16806,7 @@ function showBattleResult(myResult) {
 }
 
 function handleKey_M(e) {
+  if (pendingMatchConfirmation) return;
   let moved = false;
 
   if (e.key === "a" || e.key === "A") {

@@ -558,3 +558,74 @@ body[data-achievement-theme] #gameContainer .boss-stage-7 .board .cell.boss-stag
     padding:7px !important;
   }
 }
+
+
+/* V16 multiplayer: each player's panel uses their OWN achievement theme.
+   Scoped variables override the local browser's global body theme on the
+   opponent panel, without modifying solo stages or any gameplay/layout rules. */
+#gameContainer .multi-battle-layout [data-multi-theme] {
+  --multi-bg: #e8f5e9;
+  --multi-tile: #a5d6a7;
+  --multi-text: #1b5e20;
+  --multi-border: #81c784;
+}
+#gameContainer .multi-battle-layout [data-multi-theme="pastel"] { --multi-bg:#f3e7ed; --multi-tile:#f1baca; --multi-text:#643a51; --multi-border:#b28dcc; }
+#gameContainer .multi-battle-layout [data-multi-theme="ocean"] { --multi-bg:#d8f1fb; --multi-tile:#82d3de; --multi-text:#12546d; --multi-border:#2376b3; }
+#gameContainer .multi-battle-layout [data-multi-theme="neon"] { --multi-bg:#24203f; --multi-tile:#6750a4; --multi-text:#fff6ff; --multi-border:#1a9eaf; }
+#gameContainer .multi-battle-layout [data-multi-theme="ember"] { --multi-bg:#fff0e6; --multi-tile:#f5ad76; --multi-text:#803c1c; --multi-border:#d48834; }
+#gameContainer .multi-battle-layout [data-multi-theme="cyber"] { --multi-bg:#151b2b; --multi-tile:#28536c; --multi-text:#e6fffd; --multi-border:#5150a7; }
+#gameContainer .multi-battle-layout [data-multi-theme="diamond"] { --multi-bg:#eff9ff; --multi-tile:#bbebf4; --multi-text:#1f5775; --multi-border:#6693ce; }
+#gameContainer .multi-battle-layout [data-multi-theme="gold"] { --multi-bg:#29231d; --multi-tile:#b18c39; --multi-text:#fff6d9; --multi-border:#a17a33; }
+#gameContainer .multi-battle-layout [data-multi-theme="rainbow"] { --multi-bg:#fff0f8; --multi-tile:#e1b5ee; --multi-text:#67306b; --multi-border:#629ad1; }
+#gameContainer .multi-battle-layout > [data-multi-theme] {
+  background: var(--multi-bg) !important;
+  color: var(--multi-text) !important;
+  border-color: var(--multi-border) !important;
+}
+#gameContainer .multi-battle-layout [data-multi-theme] .board .cell,
+body[data-achievement-theme] #gameContainer .multi-battle-layout [data-multi-theme] .board .cell {
+  background: var(--multi-tile) !important;
+  color: var(--multi-text) !important;
+}
+#gameContainer .multi-battle-layout [data-multi-theme] .mobile-multi-info > div,
+#gameContainer .multi-battle-layout [data-multi-theme] .multi-enemy-score,
+#gameContainer .multi-battle-layout [data-multi-theme] .mobile-opponent-score,
+#gameContainer .multi-battle-layout [data-multi-theme] #turnText,
+#gameContainer .multi-battle-layout [data-multi-theme] > div:not(.board):not(.mobile-multi-info):not(.mobile-opponent-score) {
+  color: var(--multi-text) !important;
+}
+/* Non-blocking match notice; unlike alert(), it responds to server broadcasts. */
+.multi-match-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, .6);
+}
+.multi-match-panel {
+  width: min(380px, 100%);
+  box-sizing: border-box;
+  border-radius: 18px;
+  padding: 28px 22px;
+  text-align: center;
+  background: #f9fff9;
+  color: #173c25;
+  box-shadow: 0 18px 60px rgba(0,0,0,.22);
+}
+.multi-match-panel h2 { margin: 0 0 10px; color: #1b5e20; }
+.multi-match-panel p { overflow-wrap: anywhere; }
+.multi-match-panel button {
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 34px;
+  margin-top: 12px;
+  background: #247e47;
+  color: #fff;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.multi-match-panel button:focus-visible { outline: 3px solid #ffb300; outline-offset: 3px; }

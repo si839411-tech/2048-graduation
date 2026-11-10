@@ -14,11 +14,7 @@ require("./backup-api").attachBackupRoutes(app);
 const path = require("node:path");
 const publicFiles = [
   "index.html", "script.js", "game.js", "mobile.js", "ai-worker.js",
-  "achievements.js", "achievements.css", "backup.js", "backup.css",
-  "boss-ai-worker.js", "boss-ai-rules.js", "boss-ai-weights.js",
-  "boss-ntuple.js", "boss-realrules-7000.f32.gz",
-  "boss-ntuple-v11.js", "boss-realrules-40000-v11.f32.gz",
-  "boss-obstacle-v8.js", "boss-obstacle-v8-weights.js"
+  "achievements.js", "achievements.css", "backup.js", "backup.css"
 ];
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
 for (const filename of publicFiles) {
@@ -399,6 +395,13 @@ socket.on("cancelMatching", () => {
     console.log(socket.playerId + " 매칭 취소");
   }
 });
+// Shared acknowledgment works for automatic matching and host-started rooms.
+socket.on("acknowledgeMatchNotice", data => {
+  const roomId = data && data.roomId;
+  if (typeof roomId !== "string" || socket.roomId !== roomId) return;
+  if (!socket.rooms.has(roomId)) return;
+  io.to(roomId).emit("matchNoticeDismissed", { roomId });
+});
   socket.on("sendObstacleToEnemy", data => {
   if (!socket.roomId) return;
 
@@ -408,10 +411,14 @@ socket.on("cancelMatching", () => {
 });
 
 socket.on("sendGameState", data => {
-  if (!socket.roomId) return;
+  if (!socket.roomId || !data || typeof data !== "object") return;
+  const allowedThemes = new Set([
+    "classic", "pastel", "ocean", "neon", "ember", "cyber", "diamond", "gold", "rainbow"
+  ]);
 
   socket.to(socket.roomId).emit("receiveGameState", {
     playerId: socket.playerId,
+    theme: allowedThemes.has(data.theme) ? data.theme : "classic",
     board: data.board,
     score: data.score,
     nextRandomItem: data.nextRandomItem,
