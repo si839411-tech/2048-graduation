@@ -145,10 +145,39 @@
       panel.dataset.desktopSlotAnchor = '1';
     }
   }
+  // Desktop: adapt the visible grid size to both available width and height.
+  // Use CSS zoom to preserve existing row/column geometry, hit areas and special stages.
+  function fitDesktopBoards() {
+    if (game.classList.contains('hidden')) return;
+    const boards = [...game.querySelectorAll('.board')].filter(b => {
+      const style = getComputedStyle(b);
+      return style.display !== 'none' && !b.closest('.hidden');
+    });
+    const paired = !!game.querySelector('.multi-battle-layout, .ai-competition-layout, .boss-stage-7');
+    const availableWidth = paired
+      ? Math.max(155, (window.innerWidth - 104) / 2 - 28)
+      : Math.max(155, window.innerWidth - 145);
+    const availableHeight = Math.max(175, window.innerHeight - (paired ? 280 : 190));
+    for (const board of boards) {
+      board.style.removeProperty('zoom');
+      const natural = board.getBoundingClientRect();
+      if (!natural.width || !natural.height) continue;
+      const scale = Math.min(1, availableWidth / natural.width, availableHeight / natural.height);
+      board.style.zoom = String(Math.max(0.42, scale));
+    }
+  }
+  function resetDesktopBoards() {
+    game.querySelectorAll('.board').forEach(board => board.style.removeProperty('zoom'));
+  }
   function fitGame() {
     pad.style.display = mobile.matches && !game.classList.contains('hidden') ? 'grid' : 'none';
+    if (!mobile.matches) {
+      fitDesktopBoards();
+      positionDesktopItems();
+      return;
+    }
+    resetDesktopBoards();
     positionDesktopItems();
-    if (!mobile.matches) return;
     normalizeStagePanels();
     organizeControls();
     game.querySelectorAll('.board').forEach(board => {
