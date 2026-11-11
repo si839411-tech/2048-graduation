@@ -166,6 +166,17 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
+/* Item names: keep long effect labels readable in the existing 4x4 grid. */
+.shop-items-grid > .shop-item {
+  box-sizing: border-box;
+  padding: 5px 4px;
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: center;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
 .shop-item:hover {
   transform: scale(1.05);
 }
@@ -882,7 +893,7 @@
   <!-- JS는 무조건 마지막 -->
   <script src="achievements.js?v=20"></script>
   <script src="backup.js?v=19"></script>
-  <script src="script.js?v=32"></script>
+  <script src="script.js?v=33"></script>
   <script src="mobile.js?v=26"></script>
   
 

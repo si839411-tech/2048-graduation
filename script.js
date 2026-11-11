@@ -1036,7 +1036,7 @@ function updateItem1() {
   let price = getShopPrice(1, count);
 
   item1.textContent =
-    count >= 5 ? "아이템1 (MAX)" : `아이템1 Lv.${count}\n${price}`;
+    count >= 5 ? "1. 점수 증가 +1 (MAX)" : `1. 점수 증가 +1 Lv.${count}\n${price}`;
 
   setShopState(item1, count < 5);
 }
@@ -1046,7 +1046,7 @@ function updateItem2() {
   let price = getShopPrice(2, count);
 
   item2.textContent =
-    count >= 10 ? "아이템2 (MAX)" : `아이템2 Lv.${count}\n${price}`;
+    count >= 10 ? "2. 코인 획득량 증가 +1 (MAX)" : `2. 코인 획득량 증가 +1 Lv.${count}\n${price}`;
 
   setShopState(item2, count < 10);
 }
@@ -1054,7 +1054,7 @@ function updateItem2() {
 function updateItem3() {
   let owned = localStorage.getItem("item3");
 
-  item3.textContent = owned ? "아이템3 (구입함!)" : `아이템3\n${getShopPrice(3)}`;
+  item3.textContent = owned ? "3. 등장 숫자 증가 (4/8/16)\n구매 완료" : `3. 등장 숫자 증가 (4/8/16)\n${getShopPrice(3)}`;
   setShopState(item3, !owned);
 }
 
@@ -1062,18 +1062,18 @@ function updateItem4() {
   let owned = localStorage.getItem("item4");
 
   if (owned) {
-    item4.textContent = "아이템4 (구입함!)";
+    item4.textContent = "4. 등장 숫자 증가 (8/16/32)\n구매 완료";
     setShopState(item4, false);
     return;
   }
 
   if (!localStorage.getItem("item3")) {
-    item4.textContent = "아이템4 (🔒 아이템3 필요)";
+    item4.textContent = "4. 등장 숫자 증가 (8/16/32)\n🔒 3번 구매 필요";
     setShopState(item4, false);
     return;
   }
 
-  item4.textContent = `아이템4\n${getShopPrice(4)}`;
+  item4.textContent = `4. 등장 숫자 증가 (8/16/32)\n${getShopPrice(4)}`;
   setShopState(item4, true);
 }
 
@@ -1083,13 +1083,13 @@ function updateItem5() {
   let price = getShopPrice(5, count);
 
   if (item1Count < 5) {
-    item5.textContent = "아이템5 (🔒 아이템1 Lv.5 필요)";
+    item5.textContent = "5. 점수 증가 +10\n🔒 1번 Lv.5 필요";
     setShopState(item5, false);
     return;
   }
 
   item5.textContent =
-    count >= 10 ? "아이템5 (MAX)" : `아이템5 Lv.${count}\n${price}`;
+    count >= 10 ? "5. 점수 증가 +10 (MAX)" : `5. 점수 증가 +10 Lv.${count}\n${price}`;
 
   setShopState(item5, count < 10);
 }
@@ -1100,13 +1100,13 @@ function updateItem6() {
   let price = getShopPrice(6, count);
 
   if (item2Count < 10) {
-    item6.textContent = "아이템6 (🔒 아이템2 Lv.10 필요)";
+    item6.textContent = "6. 코인 획득량 증가 +5\n🔒 2번 Lv.10 필요";
     setShopState(item6, false);
     return;
   }
 
   item6.textContent =
-    count >= 10 ? "아이템6 (MAX)" : `아이템6 Lv.${count}\n${price}`;
+    count >= 10 ? "6. 코인 획득량 증가 +5 (MAX)" : `6. 코인 획득량 증가 +5 Lv.${count}\n${price}`;
 
   setShopState(item6, count < 10);
 }
@@ -1115,18 +1115,18 @@ function updateItem7() {
   let owned = localStorage.getItem("item7");
 
   if (owned) {
-    item7.textContent = "아이템7 (구입함!)";
+    item7.textContent = "7. 등장 숫자 증가 (16/32/64)\n구매 완료";
     setShopState(item7, false);
     return;
   }
 
   if (!localStorage.getItem("item4")) {
-    item7.textContent = "아이템7 (🔒 아이템4 필요)";
+    item7.textContent = "7. 등장 숫자 증가 (16/32/64)\n🔒 4번 구매 필요";
     setShopState(item7, false);
     return;
   }
 
-  item7.textContent = `아이템7\n${getShopPrice(7)}`;
+  item7.textContent = `7. 등장 숫자 증가 (16/32/64)\n${getShopPrice(7)}`;
   setShopState(item7, true);
 }
 
@@ -1134,18 +1134,18 @@ function updateItem8() {
   let owned = localStorage.getItem("item8");
 
   if (owned) {
-    item8.textContent = "아이템8 (구입함!)";
+    item8.textContent = "8. 등장 숫자 증가 (32/64/128)\n구매 완료";
     setShopState(item8, false);
     return;
   }
 
   if (!localStorage.getItem("item7")) {
-    item8.textContent = "아이템8 (🔒 아이템7 필요)";
+    item8.textContent = "8. 등장 숫자 증가 (32/64/128)\n🔒 7번 구매 필요";
     setShopState(item8, false);
     return;
   }
 
-  item8.textContent = `아이템8\n${getShopPrice(8)}`;
+  item8.textContent = `8. 등장 숫자 증가 (32/64/128)\n${getShopPrice(8)}`;
   setShopState(item8, true);
 }
 
@@ -1155,13 +1155,13 @@ function updateItem9() {
   let price = getShopPrice(9, count);
 
   if (item5Count < 10) {
-    item9.textContent = "아이템9 (🔒 아이템5 Lv.10 필요)";
+    item9.textContent = "9. 점수 증가 +100\n🔒 5번 Lv.10 필요";
     setShopState(item9, false);
     return;
   }
 
   item9.textContent =
-    count >= 2 ? "아이템9 (MAX)" : `아이템9 Lv.${count}\n${price}`;
+    count >= 2 ? "9. 점수 증가 +100 (MAX)" : `9. 점수 증가 +100 Lv.${count}\n${price}`;
 
   setShopState(item9, count < 2);
 }
@@ -1172,13 +1172,13 @@ function updateItem10() {
   let price = getShopPrice(10, count);
 
   if (item6Count < 10) {
-    item10.textContent = "아이템10 (🔒 아이템6 Lv.10 필요)";
+    item10.textContent = "10. 코인 획득량 증가 +100\n🔒 6번 Lv.10 필요";
     setShopState(item10, false);
     return;
   }
 
   item10.textContent =
-    count >= 2 ? "아이템10 (MAX)" : `아이템10 Lv.${count}\n${price}`;
+    count >= 2 ? "10. 코인 획득량 증가 +100 (MAX)" : `10. 코인 획득량 증가 +100 Lv.${count}\n${price}`;
 
   setShopState(item10, count < 2);
 }
@@ -1201,13 +1201,13 @@ function updateItem13() {
   let price = getShopPrice(13);
 
   if (item9Count < 2) {
-    item13.textContent = "아이템13 (🔒 아이템9 Lv.2 필요)";
+    item13.textContent = "13. 점수 증가 +1000\n🔒 9번 Lv.2 필요";
     setShopState(item13, false);
     return;
   }
 
   item13.textContent =
-    count >= 1 ? "아이템13 (MAX)" : `아이템13 Lv.${count}\n${price}`;
+    count >= 1 ? "13. 점수 증가 +1000 (MAX)" : `13. 점수 증가 +1000 Lv.${count}\n${price}`;
 
   setShopState(item13, count < 1);
 }
@@ -1218,13 +1218,13 @@ function updateItem14() {
   let price = getShopPrice(14);
 
   if (item10Count < 2) {
-    item14.textContent = "아이템14 (🔒 아이템10 Lv.2 필요)";
+    item14.textContent = "14. 코인 획득량 증가 +2000\n🔒 10번 Lv.2 필요";
     setShopState(item14, false);
     return;
   }
 
   item14.textContent =
-    count >= 1 ? "아이템14 (MAX)" : `아이템14 Lv.${count}\n${price}`;
+    count >= 1 ? "14. 코인 획득량 증가 +2000 (MAX)" : `14. 코인 획득량 증가 +2000 Lv.${count}\n${price}`;
 
   setShopState(item14, count < 1);
 }
